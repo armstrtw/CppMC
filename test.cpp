@@ -23,6 +23,7 @@ public:
   void resetCount() { iterations_ = 0; }
 
   // virtuals
+  virtual double logp(const double val) const = 0;
   virtual double logp() const = 0;
   virtual double getValue() const = 0;
   virtual void getChildren(vector<MCMCObject*>& holder) = 0;
@@ -36,6 +37,7 @@ class HyperPrior : public MCMCObject {
   double value_;
  public:
   HyperPrior(double value) : MCMCObject(), value_(value) {};
+  double logp(const double val) const { return static_cast<double>(0); }
   double logp() const { return static_cast<double>(0); }
   double getValue() const { return value_; }
   // no children
@@ -44,6 +46,39 @@ class HyperPrior : public MCMCObject {
   void next() {}
   void jump() {}
   void reject() {}
+};
+
+class Likelihood {
+private:
+  MCMCObject& dist_;
+  double* vals_;
+  size_t n_;
+  // for acceptace test
+  typedef boost::minstd_rand base_generator_type;
+  base_generator_type generator_;
+  boost::uniform_real<> uni_dist_;
+  boost::variate_generator<base_generator_type&, boost::uniform_real<> > rng_;
+
+  double logp() {
+    double ans(0);
+    for(size_t i = 0; i < n_; i++) {
+      ans += dist_.logp(vals_[i]);
+    }
+    ans += dist_.logp();
+    return ans;
+  }
+public:
+  Likelihood(MCMCObject& dist, double* vals, size_t n): dist_(dist), vals_(vals), n_(n), generator_(42u), uni_dist_(0,1), rng_(generator_, uni_dist_) {}
+  void sample(size_t iterations, size_t burn, size_t thin) {
+    for(size_t i = 0; i < iterations; i++) {
+      double logp_old = logp();
+      dist_.jump();
+      double logp_new = logp();
+      if(log(rng_()) > logp_new - logp_old) {
+	dist_.reject();
+      }
+    }
+  }
 };
 
 class Uniform : public MCMCObject {
@@ -64,9 +99,11 @@ class Uniform : public MCMCObject {
     MCMCObject(),
     lower_bound_(lower_bound), upper_bound_(upper_bound), generator_(42u), uni_dist_(lower_bound.getValue(),upper_bound.getValue()), rng_(generator_, uni_dist_) {};
 
+  double logp(const double value) const {
+    return (value_ < lower_bound_.getValue() || value_ > upper_bound_.getValue()) ? neg_inf : -log(upper_bound_.getValue()-lower_bound_.getValue());
+  }
   double logp() const {
-    double self_logp = (value_ < lower_bound_.getValue() || value_ > upper_bound_.getValue()) ? neg_inf : -log(upper_bound_.getValue()-lower_bound_.getValue());
-    return  self_logp + lower_bound_.logp() + upper_bound_.logp();
+    return  logp(value_) + lower_bound_.logp() + upper_bound_.logp();
   }
   double getValue() const { return value_; }
   void getChildren(vector<MCMCObject*>& holder) {
@@ -82,13 +119,19 @@ class Uniform : public MCMCObject {
 
 
 int main() {
-  HyperPrior lower(0);
-  HyperPrior upper(10);
-  Uniform uni(lower, upper);
+  const int N = 100;
+  double sample_data[N];
 
-  for(int i = 0; i < 100; i++) {
-    uni.next();
-    cout << "val/logp: " <<  uni.getValue() << ":" << uni.logp() << endl;
+  base_generator_type generator(42u);
+  boost::uniform_real<> uni_dist(0,1);
+  boost::variate_generator<base_generator_type&, boost::uniform_real<> > uni(generator, uni_dist);
+  for(int i = 0; i < 10; i++) {
+    sample_data[i] = uni();
   }
+
+  HyperPrior lower(0);
+  HyperPrior upper(1);
+  Uniform beta(lower, upper);
+
   return 1;
 }
