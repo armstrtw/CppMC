@@ -26,16 +26,11 @@ class MCMCJumper {
   double sd_;
   double old_mean_;
   double old_sd_;
-  const gsl_rng_type* T_;
-  gsl_rng* rng_source_;
+  static gsl_rng* rng_source_;
  public:
-  ~MCMCJumper() {
-    gsl_rng_free (rng_source_);
-  }
-  MCMCJumper(const double mean, const double sd): mean_(mean), sd_(sd), old_mean_(0), old_sd_(0) {
-    gsl_rng_env_setup();
-    T_ = gsl_rng_default;
-    rng_source_ = gsl_rng_alloc (T_);
+  MCMCJumper(const double mean, const double sd): mean_(mean), sd_(sd), old_mean_(0), old_sd_(0) {}
+  static void setupRNG(gsl_rng* rng) {
+    rng_source_ = rng;
   }
   double rng() {
     return mean_ + gsl_ran_gaussian(rng_source_, sd_);
@@ -63,7 +58,7 @@ public:
   virtual double logp() const = 0; // must return logp of children
   virtual void jump(int current_iteration) = 0; // must jump children
   virtual void reject() = 0; // must reject children
-  T getValue();
+  virtual T getValue() = 0;
 };
 
 class MCMCStochastic : public MCMCObject {
@@ -129,8 +124,9 @@ private:
 
   double logp() {
     double ans(0);
+    T fcst = forecaster_.getValue();
     for(size_t i = 0; i < n_; i++) {
-      ans += dist_.logp(actual_obs_[i]);
+      ans += dist_.logp(fcst[i]);
     }
     //cout << "obs logp: " << ans << endl;
     ans += dist_.logp();
@@ -154,19 +150,16 @@ public:
 
 class Uniform : public MCMCStochastic {
  private:
-  // This is a typedef for a random number generator.
-  // Try boost::mt19937 or boost::ecuyer1988 instead of boost::minstd_rand
+  const double lower_bound_;
+  const double upper_bound_;
   typedef boost::minstd_rand base_generator_type;
   base_generator_type generator_;
   boost::uniform_real<> rng_dist_;
   boost::variate_generator<base_generator_type&, boost::uniform_real<> > rng_;
-
-  const double lower_bound_;
-  const double upper_bound_;
  public:
   Uniform(const double lower_bound, const double upper_bound) :
     MCMCStochastic(),
-    lower_bound_(lower_bound), upper_bound_(upper_bound), generator_(42u), rng_dist_(lower_bound,upper_bound), rng_(generator_, rng_dist_)
+    lower_bound_(lower_bound), upper_bound_(upper_bound), generator_(42u), rng_dist_(lower_bound_,upper_bound_), rng_(generator_, rng_dist_)
   {
     value_= rng_();
     cout << "initial value: " << value_ << endl;
@@ -182,15 +175,12 @@ class Uniform : public MCMCStochastic {
 
 class Normal : public MCMCStochastic {
  private:
-  // This is a typedef for a random number generator.
-  // Try boost::mt19937 or boost::ecuyer1988 instead of boost::minstd_rand
+  const double mu_;
+  const double tau_;
   typedef boost::minstd_rand base_generator_type;
   base_generator_type generator_;
   normal_distribution<double> rng_dist_;
   boost::variate_generator<base_generator_type&, normal_distribution<double> > rng_;
-
-  const double mu_;
-  const double tau_;
 public:
   Normal(const double mu, const double tau) :
     MCMCStochastic(),
@@ -207,19 +197,28 @@ public:
 
 class EstimatedY : public MCMCDeterministic<mat> {
 private:
+  const mat& vals_;
   MCMCStochastic& alpha_;
   MCMCStochastic& beta_;
-  const mat& vals_;
 public:
   EstimatedY(const mat& vals, MCMCStochastic& alpha, MCMCStochastic& beta): vals_(vals), alpha_(alpha), beta_(beta) {}
+  //cout << "alpha:beta: " << alpha_.getValue() <<":"<< beta_.getValue() << endl;
   mat getValue() { return alpha_.getValue() + beta_.getValue() * vals_; }
   double logp() const { return alpha_.logp() + beta_.logp(); }
   void jump(int current_iteration) { alpha_.jump(current_iteration); beta_.jump(current_iteration); }
   void reject() { alpha_.reject(); beta_.reject(); }
 };
 
+//gsl_rng* rng;
+gsl_rng* MCMCJumper::rng_source_ =  NULL;
+
 int main() {
-  const int N = 30;
+  const gsl_rng_type* T;
+  gsl_rng_env_setup();
+  T = gsl_rng_default;
+  MCMCJumper::setupRNG(gsl_rng_alloc(T));
+
+  const int N = 1000;
   mat X(N,1);
   mat y(N,1);
 
@@ -228,7 +227,7 @@ int main() {
   normal_distribution<double> norm_dist_(0,1);
   boost::variate_generator<base_generator_type&, normal_distribution<double> > rng_(generator_, norm_dist_);
 
-  for(int i = 0; i < 100; i++) {
+  for(int i = 0; i < N; i++) {
     y[i] = rng_();
     X[i] = rng_();
   }
@@ -237,6 +236,6 @@ int main() {
   EstimatedY obs_fcst(X, alpha, beta);
   Normal y_hat(0, 0.0001);
   Likelihood<mat> likelihood(y_hat, y, obs_fcst);
-  likelihood.sample(1e3, 1e2, 10);
+  likelihood.sample(1e4, 1e2, 50);
   return 1;
 }
