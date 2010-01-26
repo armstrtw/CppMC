@@ -86,8 +86,12 @@ class Uniform : public MCMCObject {
   // Try boost::mt19937 or boost::ecuyer1988 instead of boost::minstd_rand
   typedef boost::minstd_rand base_generator_type;
   base_generator_type generator_;
-  boost::uniform_real<> uni_dist_;
+  boost::uniform_real<> current_dist_;
+  boost::uniform_real<> old_dist_;
   boost::variate_generator<base_generator_type&, boost::uniform_real<> > rng_;
+
+  normal_distribution<double> jumper_dist_;
+  boost::variate_generator<base_generator_type&, normal_distribution<double> > jumper_;
 
   MCMCObject& lower_bound_;
   MCMCObject& upper_bound_;
@@ -96,7 +100,7 @@ class Uniform : public MCMCObject {
  public:
   Uniform(MCMCObject& lower_bound, MCMCObject& upper_bound) :
     MCMCObject(),
-    lower_bound_(lower_bound), upper_bound_(upper_bound), generator_(42u), uni_dist_(lower_bound.getValue(),upper_bound.getValue()), rng_(generator_, uni_dist_) {};
+    lower_bound_(lower_bound), upper_bound_(upper_bound), generator_(42u), current_dist_(lower_bound.getValue(),upper_bound.getValue()), rng_(generator_, current_dist_) {};
 
   double logp(const double value) const {
     return (value_ < lower_bound_.getValue() || value_ > upper_bound_.getValue()) ? neg_inf : -log(upper_bound_.getValue()-lower_bound_.getValue());
@@ -112,7 +116,9 @@ class Uniform : public MCMCObject {
   void next() {
     value_ = rng_();
   }
-  void jump() {}
+  void jump() {
+    value_
+  }
   void reject() {}
 };
 
