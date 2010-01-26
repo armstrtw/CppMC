@@ -129,7 +129,8 @@ private:
       ans += dist_.logp(fcst[i]);
     }
     //cout << "obs logp: " << ans << endl;
-    ans += dist_.logp();
+    //cout << "forecaster logp: " << forecaster_.logp() << endl;
+    ans += forecaster_.logp();
 
     return ans;
   }
@@ -166,6 +167,9 @@ class Uniform : public MCMCStochastic {
   };
 
   double logp(const double value) const {
+    // if(value_ < lower_bound_ || value_ > upper_bound_) {
+    //   cout << "oob" << endl;
+    // }
     return (value_ < lower_bound_ || value_ > upper_bound_) ? neg_inf : -log(upper_bound_ - lower_bound_);
   }
   double logp() const {
@@ -202,8 +206,7 @@ private:
   MCMCStochastic& beta_;
 public:
   EstimatedY(const mat& vals, MCMCStochastic& alpha, MCMCStochastic& beta): vals_(vals), alpha_(alpha), beta_(beta) {}
-  //cout << "alpha:beta: " << alpha_.getValue() <<":"<< beta_.getValue() << endl;
-  mat getValue() { return alpha_.getValue() + beta_.getValue() * vals_; }
+  mat getValue() { cout << "alpha:beta: " << alpha_.getValue() <<":"<< beta_.getValue() << endl;  return alpha_.getValue() + beta_.getValue() * vals_; }
   double logp() const { return alpha_.logp() + beta_.logp(); }
   void jump(int current_iteration) { alpha_.jump(current_iteration); beta_.jump(current_iteration); }
   void reject() { alpha_.reject(); beta_.reject(); }
