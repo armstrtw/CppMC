@@ -39,9 +39,7 @@ class HyperPrior : public MCMCObject {
   double logp(const double val) const { return static_cast<double>(0); }
   double logp() const { return static_cast<double>(0); }
   double getValue() const { return value_; }
-  // no children
-  void getChildren(vector<MCMCObject*>& holder) {}
-  // static? for duration of sim? do hypers change?
+  void getChildren(vector<MCMCObject*>& holder) {} // no children
   void next() {}
   void jump() {}
   void reject() {}
