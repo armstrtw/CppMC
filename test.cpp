@@ -1,12 +1,11 @@
 #include <iostream>
 #include <vector>
 #include <limits>
-#include <boost/random/linear_congruential.hpp>
-#include <boost/random/uniform_int.hpp>
+#include <boost/random.hpp>
 #include <boost/random/uniform_real.hpp>
-#include <boost/random/variate_generator.hpp>
-#include <boost/generator_iterator.hpp>
 #include <boost/math/distributions/uniform.hpp>
+
+using namespace boost;
 using std::vector;
 using std::cout;
 using std::endl;
@@ -122,11 +121,14 @@ int main() {
   const int N = 100;
   double sample_data[N];
 
-  base_generator_type generator(42u);
-  boost::uniform_real<> uni_dist(0,1);
-  boost::variate_generator<base_generator_type&, boost::uniform_real<> > uni(generator, uni_dist);
+  typedef boost::minstd_rand base_generator_type;
+  base_generator_type generator_;
+  normal_distribution<double> norm_dist_(0,1);
+  boost::variate_generator<base_generator_type&, normal_distribution<double> > rng_(generator_, norm_dist_);
+
   for(int i = 0; i < 10; i++) {
-    sample_data[i] = uni();
+    sample_data[i] = rng_();
+    cout << sample_data[i] << endl;
   }
 
   HyperPrior lower(0);
