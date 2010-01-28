@@ -74,7 +74,7 @@ class MCMCJumper : public MCMCJumperBase {
   }
   void revert() {
     mean_ = old_mean_;
-    sd_ = old_sd_;
+    //sd_ = old_sd_;
     drawRNG();
   }
 };
@@ -84,8 +84,11 @@ protected:
   static base_generator_type generator_;
 public:
   MCMCObject() {}
-  // every object must have a way to calc logp
   virtual double logp() const = 0;
+  virtual void jump(int current_iteration) = 0;
+  virtual void revert() = 0;
+  virtual void tally() = 0;
+  virtual void tally_children() = 0;
 };
 
 // can't have value_ here b/c deterministics actually don't store their value
@@ -100,7 +103,8 @@ public:
     return value_;
   }
   void tally() {
-    history_.push(value_);
+    history_.push_back(value_);
+    tally_children();
   }
   const vector<T>& getHistory() const {
     return history_;
@@ -109,11 +113,36 @@ public:
 
 template<typename T>
 class MCMCDeterministic : public MCMCSpecialized<T> {
+protected:
+  vector<MCMCObject*> children_;
 public:
   MCMCDeterministic(const T& initial_value): MCMCSpecialized<T>(initial_value) {}
-  virtual double logp() const = 0; // must return logp of children
-  virtual void jump(int current_iteration) = 0; // must jump children, and update self
-  virtual void revert() = 0; // must revert children, and update self
+  double logp() const {
+    double ans(0);
+    for(vector<MCMCObject*>::const_iterator  iter = children_.begin(); iter!=children_.end(); iter++) {
+      ans += (*iter)->logp();
+    }
+    return ans;
+  }
+  void jump(int current_iteration) {
+    for(vector<MCMCObject*>::iterator iter = children_.begin(); iter!=children_.end(); iter++) {
+      (*iter)->jump(current_iteration);
+    }
+    MCMCSpecialized<T>::value_ = eval();
+  }
+  void revert() {
+    for(vector<MCMCObject*>::iterator iter = children_.begin(); iter!=children_.end(); iter++) {
+      (*iter)->revert();
+    }
+    MCMCSpecialized<T>::value_ = eval();
+  }
+  void tally_children() {
+    for(vector<MCMCObject*>::iterator iter = children_.begin(); iter!=children_.end(); iter++) {
+      (*iter)->tally();
+    }
+  }
+  virtual void registerChilderen() = 0; // user must provide this function to make object aware of children
+  virtual T eval() = 0;  // user must provide this function to update object
 };
 
 template<typename T>
@@ -131,6 +160,7 @@ public:
     }
     ++iteration_;
     jumper_.jump();
+    //cout << MCMCSpecialized<T>::value_ << endl;
   }
   void revert() {
     jumper_.revert();
@@ -142,6 +172,8 @@ class HyperPrior : public MCMCSpecialized<T> {
 public:
   HyperPrior(const T& value) : MCMCSpecialized<T>(), MCMCSpecialized<T>::value_(value) {};
   double logp() const { return static_cast<double>(0); }
+  void tally() {}
+  void tally_children() {}
 };
 
 template<typename T>
@@ -153,11 +185,7 @@ class Uniform : public MCMCStochastic<T> {
   boost::variate_generator<base_generator_type&, boost::uniform_real<> > rng_;
  public:
   Uniform(const double lower_bound, const double upper_bound, const T shape): MCMCStochastic<T>(shape),
-    lower_bound_(lower_bound), upper_bound_(upper_bound), rng_dist_(lower_bound_,upper_bound_), rng_(MCMCStochastic<T>::generator_, rng_dist_)
-  {
-    cout << "shape passed in: " << endl << shape << endl;
-    cout << "initial value: " << endl << MCMCStochastic<T>::value_ << endl;
-  };
+    lower_bound_(lower_bound), upper_bound_(upper_bound), rng_dist_(lower_bound_,upper_bound_), rng_(MCMCStochastic<T>::generator_, rng_dist_) {};
   double getSD() {
     return (upper_bound_ - lower_bound_)/pow(12,0.5);
   }
@@ -168,6 +196,7 @@ class Uniform : public MCMCStochastic<T> {
     }
     return ans;
   }
+  void tally_children() {}  // FIXME: will need this when upper/lower are alowed to be stocastics
 };
 
 template<typename T>
@@ -224,6 +253,9 @@ public:
         cout << "revert" << endl;
         forecaster_.revert();
       }
+      if(i > burn && i % thin == 0) {
+        forecaster_.tally();
+      }
     }
   }
 };
@@ -258,15 +290,13 @@ public:
     cout << "X:" << endl << X_;
     //cout << "b:" << endl << b_;
     cout << "value_:" << endl << value_;
+    registerChilderen();
   }
-  double logp() const { return b_.logp(); }
-  void jump(int current_iteration) {
-    b_.jump(current_iteration);
-    value_ = X_ * b_.exposeValue();
+  void registerChilderen() {
+    children_.push_back(&b_);
   }
-  void revert() {
-    b_.revert();
-    value_ = X_ * b_.exposeValue();
+  mat eval() {
+    return X_ * b_.exposeValue();
   }
 };
 
@@ -298,9 +328,21 @@ int main() {
   cout << "lm coefs:" << endl;
   cout << coefs << endl;
   Uniform<vec> B(-1.0,1.0, vec(2));
-  //cout << B.exposeValue() << endl;
   EstimatedY obs_fcst(X, B);
   NormalLikelihood<mat> likelihood(y, obs_fcst, 0.0001);
-  likelihood.sample(1e4, 10, 2);
+  likelihood.sample(100, 10, 2);
+  const vector<vec>& coefs_hist(B.getHistory());
+
+  vec avg_coefs(2);
+  avg_coefs.fill(0);
+  for(int i = 0; i < coefs_hist.size(); i++) {
+    //cout << coefs_hist[i][0] << " " << coefs_hist[i][1] << endl;
+    avg_coefs += coefs_hist[i];
+  }
+  avg_coefs /= coefs_hist.size();
+
+  cout << "colected " << coefs_hist.size() << " samples." << endl;
+  cout << "lm coefs" << endl << coefs << endl;
+  cout << "avg_coefs" << endl << avg_coefs << endl;
   return 1;
 }
