@@ -17,7 +17,7 @@ using std::cout;
 using std::endl;
 using boost::math::uniform;
 typedef boost::minstd_rand base_generator_type;
-#define DEBUG
+//#define DEBUG
 
 const double neg_inf(-std::numeric_limits<double>::infinity());
 
@@ -53,29 +53,56 @@ class MCMCJumper : public MCMCJumperBase {
   T mean_;
   T sd_;
   T old_mean_;
-  T old_sd_;
   T& value_;
+  double scale_;
   const int n_;
   void drawRNG() {
     for(int i = 0; i < n_; i++) {
-      value_[i] = mean_[i] + gsl_ran_gaussian(rng_source_, sd_[i]);
+      value_[i] = mean_[i] + sd_[i] * gsl_ran_gaussian(rng_source_, 1.0);
     }
   }
  public:
-  MCMCJumper(T& value): mean_(value), sd_(ones(nrow(value) *ncol(value))), old_mean_(value), old_sd_(value), value_(value), n_(nrow(value) *ncol(value)) { sd_.fill(0.1); }
-  const T& getSD() const { return sd_; }
-  void setSD(const T& sd) { sd_ = sd; }
+  MCMCJumper(T& value): mean_(value), sd_(abs(value)), old_mean_(value), value_(value), n_(nrow(value) *ncol(value)), scale_(1) {}
+  void setScale(const double scale) {
+    scale_ = scale;
+  }
   void jump() {
     old_mean_ = mean_;
-    old_sd_ = sd_;
     mean_ = value_;
-    //sd_ = new_sd;
+    //cout << "mean" << endl << mean_;
+    //cout << "value" << endl << value_;
     drawRNG();
   }
   void revert() {
     mean_ = old_mean_;
-    //sd_ = old_sd_;
     drawRNG();
+  }
+
+  void tune(const double acceptance_rate) {
+    if(acceptance_rate < .01) {
+      scale_ *= .1;
+      return;
+    }
+    if(acceptance_rate < .05) {
+      scale_ *= .5;
+      return;
+    }
+    if(acceptance_rate < .2) {
+      scale_ *= .9;
+      return;
+    }
+    if(acceptance_rate > .95) {
+      scale_ *= 10;
+      return;
+    }
+    if(acceptance_rate > .75) {
+      scale_ *= 2;
+      return;
+    }
+    if(acceptance_rate < .5) {
+      scale_ *= 1.1;
+      return;
+    }
   }
 };
 
@@ -88,7 +115,8 @@ public:
   virtual void jump(int current_iteration) = 0;
   virtual void revert() = 0;
   virtual void tally() = 0;
-  virtual void tally_children() = 0;
+  virtual void tally_parents() = 0;
+  virtual void tune(const double acceptance_rate) = 0;
 };
 
 // can't have value_ here b/c deterministics actually don't store their value
@@ -104,7 +132,7 @@ public:
   }
   void tally() {
     history_.push_back(value_);
-    tally_children();
+    tally_parents();
   }
   const vector<T>& getHistory() const {
     return history_;
@@ -114,34 +142,39 @@ public:
 template<typename T>
 class MCMCDeterministic : public MCMCSpecialized<T> {
 protected:
-  vector<MCMCObject*> children_;
+  vector<MCMCObject*> parents_;
 public:
   MCMCDeterministic(const T& initial_value): MCMCSpecialized<T>(initial_value) {}
   double logp() const {
     double ans(0);
-    for(vector<MCMCObject*>::const_iterator  iter = children_.begin(); iter!=children_.end(); iter++) {
+    for(vector<MCMCObject*>::const_iterator  iter = parents_.begin(); iter!=parents_.end(); iter++) {
       ans += (*iter)->logp();
     }
     return ans;
   }
   void jump(int current_iteration) {
-    for(vector<MCMCObject*>::iterator iter = children_.begin(); iter!=children_.end(); iter++) {
+    for(vector<MCMCObject*>::iterator iter = parents_.begin(); iter!=parents_.end(); iter++) {
       (*iter)->jump(current_iteration);
     }
     MCMCSpecialized<T>::value_ = eval();
   }
   void revert() {
-    for(vector<MCMCObject*>::iterator iter = children_.begin(); iter!=children_.end(); iter++) {
+    for(vector<MCMCObject*>::iterator iter = parents_.begin(); iter!=parents_.end(); iter++) {
       (*iter)->revert();
     }
     MCMCSpecialized<T>::value_ = eval();
   }
-  void tally_children() {
-    for(vector<MCMCObject*>::iterator iter = children_.begin(); iter!=children_.end(); iter++) {
+  void tally_parents() {
+    for(vector<MCMCObject*>::iterator iter = parents_.begin(); iter!=parents_.end(); iter++) {
       (*iter)->tally();
     }
   }
-  virtual void registerChilderen() = 0; // user must provide this function to make object aware of children
+  void tune(const double acceptance_rate) {
+    for(vector<MCMCObject*>::iterator iter = parents_.begin(); iter!=parents_.end(); iter++) {
+      (*iter)->tune(acceptance_rate);
+    }
+  }
+  virtual void registerParents() = 0; // user must provide this function to make object aware of parents
   virtual T eval() = 0;  // user must provide this function to update object
 };
 
@@ -165,6 +198,9 @@ public:
   void revert() {
     jumper_.revert();
   }
+  void tune(const double acceptance_rate) {
+    jumper_.tune(acceptance_rate);
+  }
 };
 
 template<typename T>
@@ -173,7 +209,7 @@ public:
   HyperPrior(const T& value) : MCMCSpecialized<T>(), MCMCSpecialized<T>::value_(value) {};
   double logp() const { return static_cast<double>(0); }
   void tally() {}
-  void tally_children() {}
+  void tally_parents() {}
 };
 
 template<typename T>
@@ -185,7 +221,9 @@ class Uniform : public MCMCStochastic<T> {
   boost::variate_generator<base_generator_type&, boost::uniform_real<> > rng_;
  public:
   Uniform(const double lower_bound, const double upper_bound, const T shape): MCMCStochastic<T>(shape),
-    lower_bound_(lower_bound), upper_bound_(upper_bound), rng_dist_(lower_bound_,upper_bound_), rng_(MCMCStochastic<T>::generator_, rng_dist_) {};
+    lower_bound_(lower_bound), upper_bound_(upper_bound), rng_dist_(lower_bound_,upper_bound_), rng_(MCMCStochastic<T>::generator_, rng_dist_) {
+    MCMCStochastic<T>::jumper_.setScale(getSD()/2);
+  }
   double getSD() {
     return (upper_bound_ - lower_bound_)/pow(12,0.5);
   }
@@ -196,34 +234,8 @@ class Uniform : public MCMCStochastic<T> {
     }
     return ans;
   }
-  void tally_children() {}  // FIXME: will need this when upper/lower are alowed to be stocastics
+  void tally_parents() {}  // FIXME: will need this when upper/lower are alowed to be stocastics
 };
-
-template<typename T>
-class Normal : public MCMCStochastic<T> {
-private:
-  const double mu_;
-  const double tau_;
-  normal_distribution<double> rng_dist_;
-  boost::variate_generator<base_generator_type&, normal_distribution<double> > rng_;
-public:
-  Normal(const double mu, const double tau) :
-    MCMCStochastic<T>(),
-    mu_(mu), tau_(tau), rng_dist_(mu_,pow(tau_,2)), rng_(MCMCStochastic<T>::generator_, rng_dist_)
-  {
-    MCMCStochastic<T>::jumper_.setSD(getSD());
-    MCMCStochastic<T>::value_= rng_();
-  }
-  double getSD() {
-    return sqrt(tau_);
-  }
-  double logp(const double value, const double mu, const double tau) const {
-    return - 0.5 * tau * pow(value-mu,2) + 0.5*log(0.5*tau/arma::math::pi());
-  }
-  double logp() const {
-    return  logp(MCMCStochastic<T>::value_, mu_, tau_);
-   }
- };
 
 template<typename T>
 class LikelihoodFunctionObject {
@@ -242,6 +254,9 @@ public:
   virtual double logp() const = 0;
 
   void sample(int iterations, int burn, int thin) {
+    double accepted(0);
+    double rejected(0);
+
     for(int i = 0; i < iterations; i++) {
       double logp_old = logp();
       forecaster_.jump(i);
@@ -250,8 +265,18 @@ public:
       cout << "old, new: " << logp_old << " : " << logp_new << endl;
 #endif
       if(logp_new == neg_inf || log(rng()) > logp_new - logp_old) {
-        cout << "revert" << endl;
+        //cout << "revert" << endl;
         forecaster_.revert();
+        ++rejected;
+      } else {
+        ++accepted;
+      }
+
+      // tune every 20
+      if(i < burn && i % 20 == 0) {
+        forecaster_.tune(accepted/accepted + rejected);
+        accepted = 0;
+        rejected = 0;
       }
       if(i > burn && i % thin == 0) {
         forecaster_.tally();
@@ -267,13 +292,12 @@ class NormalLikelihood : public LikelihoodFunctionObject<T> {
 public:
   NormalLikelihood(const T& actual_values, MCMCDeterministic<T>& forecaster, const double tau): LikelihoodFunctionObject<T>(actual_values, forecaster), tau_(tau) {}
   double logp(const double value, const double mu, const double tau) const {
-    return - 0.5 * tau * pow(value-mu,2) + 0.5*log(0.5*tau/arma::math::pi());
+    return 0.5*log(0.5*tau/arma::math::pi()) - 0.5 * tau * pow(value-mu,2);
   }
   double logp() const {
-    const T& sample = LikelihoodFunctionObject<T>::forecaster_.exposeValue();
     double ans(0);
+    const T& sample = LikelihoodFunctionObject<T>::forecaster_.exposeValue();    
     for(int i = 0; i < LikelihoodFunctionObject<T>::actual_values_.n_elem; i++) {
-      //cout << "sample[i]" << sample[i] << endl;
       ans += logp(sample[i], LikelihoodFunctionObject<T>::actual_values_[i], tau_);
     }
     ans += LikelihoodFunctionObject<T>::forecaster_.logp();
@@ -287,13 +311,10 @@ private:
   MCMCStochastic<vec>& b_;
 public:
   EstimatedY(mat& X, MCMCStochastic<vec>& b): MCMCDeterministic<mat>(X * b.exposeValue()), X_(X), b_(b) {
-    cout << "X:" << endl << X_;
-    //cout << "b:" << endl << b_;
-    cout << "value_:" << endl << value_;
-    registerChilderen();
+    registerParents();
   }
-  void registerChilderen() {
-    children_.push_back(&b_);
+  void registerParents() {
+    parents_.push_back(&b_);
   }
   mat eval() {
     return X_ * b_.exposeValue();
@@ -310,7 +331,7 @@ int main() {
   T = gsl_rng_default;
   MCMCJumperBase::setupRNG(gsl_rng_alloc(T));
 
-  const int N = 100;
+  const int N = 10;
   mat X(N,2);
   mat y(N,1);
 
@@ -330,7 +351,7 @@ int main() {
   Uniform<vec> B(-1.0,1.0, vec(2));
   EstimatedY obs_fcst(X, B);
   NormalLikelihood<mat> likelihood(y, obs_fcst, 0.0001);
-  likelihood.sample(100, 10, 2);
+  likelihood.sample(1e6, 1e3, 2);
   const vector<vec>& coefs_hist(B.getHistory());
 
   vec avg_coefs(2);
