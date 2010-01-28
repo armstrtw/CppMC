@@ -93,10 +93,17 @@ template<typename T>
 class MCMCSpecialized : public MCMCObject {
 protected:
   T value_;
+  vector<T> history_;
 public:
   MCMCSpecialized(const T& shape): MCMCObject(), value_(shape) {}
   const T& exposeValue() const {
     return value_;
+  }
+  void tally() {
+    history_.push(value_);
+  }
+  const vector<T>& getHistory() const {
+    return history_;
   }
 };
 
@@ -204,6 +211,21 @@ public:
     return rng_();
   }
   virtual double logp() const = 0;
+
+  void sample(int iterations, int burn, int thin) {
+    for(int i = 0; i < iterations; i++) {
+      double logp_old = logp();
+      forecaster_.jump(i);
+      double logp_new = logp();
+#ifdef DEBUG
+      cout << "old, new: " << logp_old << " : " << logp_new << endl;
+#endif
+      if(logp_new == neg_inf || log(rng()) > logp_new - logp_old) {
+        cout << "revert" << endl;
+        forecaster_.revert();
+      }
+    }
+  }
 };
 
 template<typename T>
@@ -224,20 +246,6 @@ public:
     }
     ans += LikelihoodFunctionObject<T>::forecaster_.logp();
     return ans;
-  }
-  void sample(int iterations, int burn, int thin) {
-    for(int i = 0; i < iterations; i++) {
-      double logp_old = logp();
-      LikelihoodFunctionObject<T>::forecaster_.jump(i);
-      double logp_new = logp();
-#ifdef DEBUG
-      cout << "old, new: " << logp_old << " : " << logp_new << endl;
-#endif
-      if(logp_new == neg_inf || log(LikelihoodFunctionObject<T>::rng()) > logp_new - logp_old) {
-        cout << "revert" << endl;
-	LikelihoodFunctionObject<T>::forecaster_.revert();
-      }
-    }
   }
 };
 
