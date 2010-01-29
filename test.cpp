@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <limits>
 #include <cmath>
@@ -13,29 +14,20 @@
 using namespace boost;
 using namespace arma;
 using std::vector;
+using std::ofstream;
 using std::cout;
 using std::endl;
 using boost::math::uniform;
 typedef boost::minstd_rand base_generator_type;
-//#define DEBUG
 
 const double neg_inf(-std::numeric_limits<double>::infinity());
 
-inline int nrow(vec v) {
-  return v.n_rows;
-}
-
-inline int ncol(vec v) {
-  return v.n_cols;
-}
-
-inline int nrow(mat m) {
-  return m.n_rows;
-}
-
-inline int ncol(mat m) {
-  return m.n_cols;
-}
+inline int nrow(vec v) { return v.n_rows; }
+inline int ncol(vec v) { return v.n_cols; }
+inline int nrow(mat m) { return m.n_rows; }
+inline int ncol(mat m) { return m.n_cols; }
+//inline int size(vec v) { return nrow(v) * ncol(v); }
+inline int size(vec m) { return nrow(m) * ncol(m); }
 
 class MCMCJumperBase {
 protected:
@@ -50,35 +42,37 @@ public:
 template<typename T>
 class MCMCJumper : public MCMCJumperBase {
  private:
-  T mean_;
+  T old_value_;
   T sd_;
-  T old_mean_;
   T& value_;
   double scale_;
-  const int n_;
   void drawRNG() {
-    for(int i = 0; i < n_; i++) {
-      value_[i] = mean_[i] + sd_[i] * gsl_ran_gaussian(rng_source_, 1.0);
+    for(int i = 0; i < nrow(value_) * ncol(value_); i++) {
+      value_[i] += scale_ * gsl_ran_gaussian(rng_source_, sd_[i]);
     }
   }
  public:
-  MCMCJumper(T& value): mean_(value), sd_(abs(value)), old_mean_(value), value_(value), n_(nrow(value) *ncol(value)), scale_(1) {}
+  MCMCJumper(T& value): value_(value), old_value_(value), sd_(nrow(value), ncol(value)), scale_(1) {
+    sd_.fill(1);
+  }
+  void setSD(const double sd) {
+    for(int i = 0; i < ncol(sd_) * nrow(sd_); i++) {
+      sd_[i] = sd;
+    }
+  }
   void setScale(const double scale) {
     scale_ = scale;
   }
   void jump() {
-    old_mean_ = mean_;
-    mean_ = value_;
-    //cout << "mean" << endl << mean_;
-    //cout << "value" << endl << value_;
+    old_value_ = value_;
     drawRNG();
   }
   void revert() {
-    mean_ = old_mean_;
-    drawRNG();
+    value_ = old_value_;
   }
 
   void tune(const double acceptance_rate) {
+    //cout << "acceptance_rate: " << acceptance_rate << endl;
     if(acceptance_rate < .01) {
       scale_ *= .1;
       return;
@@ -91,16 +85,16 @@ class MCMCJumper : public MCMCJumperBase {
       scale_ *= .9;
       return;
     }
+    if(acceptance_rate < .5) {
+      scale_ *= 1.1;
+      return;
+    }
     if(acceptance_rate > .95) {
       scale_ *= 10;
       return;
     }
     if(acceptance_rate > .75) {
       scale_ *= 2;
-      return;
-    }
-    if(acceptance_rate < .5) {
-      scale_ *= 1.1;
       return;
     }
   }
@@ -119,7 +113,6 @@ public:
   virtual void tune(const double acceptance_rate) = 0;
 };
 
-// can't have value_ here b/c deterministics actually don't store their value
 template<typename T>
 class MCMCSpecialized : public MCMCObject {
 protected:
@@ -193,7 +186,6 @@ public:
     }
     ++iteration_;
     jumper_.jump();
-    //cout << MCMCSpecialized<T>::value_ << endl;
   }
   void revert() {
     jumper_.revert();
@@ -221,16 +213,24 @@ class Uniform : public MCMCStochastic<T> {
   boost::variate_generator<base_generator_type&, boost::uniform_real<> > rng_;
  public:
   Uniform(const double lower_bound, const double upper_bound, const T shape): MCMCStochastic<T>(shape),
-    lower_bound_(lower_bound), upper_bound_(upper_bound), rng_dist_(lower_bound_,upper_bound_), rng_(MCMCStochastic<T>::generator_, rng_dist_) {
-    MCMCStochastic<T>::jumper_.setScale(getSD()/2);
+                                                                              lower_bound_(lower_bound), upper_bound_(upper_bound),
+                                                                              rng_dist_(lower_bound_,upper_bound_), rng_(MCMCStochastic<T>::generator_, rng_dist_) {    
+    for(int i = 0; i < nrow(MCMCStochastic<T>::value_) * ncol(MCMCStochastic<T>::value_); i++) {
+      MCMCStochastic<T>::value_[i] = rng_();
+    }
+    MCMCStochastic<T>::jumper_.setSD(sd());
   }
-  double getSD() {
+  double sd() {
     return (upper_bound_ - lower_bound_)/pow(12,0.5);
   }
   double logp() const {
     double ans(0);
     for(int i = 0; i < nrow(MCMCStochastic<T>::value_) * ncol(MCMCStochastic<T>::value_); i++) {
-      ans += (MCMCStochastic<T>::value_[i] < lower_bound_ || MCMCStochastic<T>::value_[i] > upper_bound_) ? neg_inf : -log(upper_bound_ - lower_bound_);
+      if(MCMCStochastic<T>::value_[i] < lower_bound_ || MCMCStochastic<T>::value_[i] > upper_bound_) {
+        return neg_inf;
+      } else {
+        ans += -log(upper_bound_ - lower_bound_);
+      }
     }
     return ans;
   }
@@ -247,7 +247,7 @@ protected:
   const T& actual_values_;
   MCMCDeterministic<T>& forecaster_;
 public:
-  LikelihoodFunctionObject(const T& actual_values_, MCMCDeterministic<T>& forecaster): generator_(50u), uni_dist_(0,1), rng_(generator_, uni_dist_), actual_values_(actual_values_), forecaster_(forecaster) {}
+  LikelihoodFunctionObject(const T& actual_values_, MCMCDeterministic<T>& forecaster): generator_(20u), uni_dist_(0,1), rng_(generator_, uni_dist_), actual_values_(actual_values_), forecaster_(forecaster) {}
   double rng() {
     return rng_();
   }
@@ -261,22 +261,23 @@ public:
       double logp_old = logp();
       forecaster_.jump(i);
       double logp_new = logp();
-#ifdef DEBUG
-      cout << "old, new: " << logp_old << " : " << logp_new << endl;
-#endif
       if(logp_new == neg_inf || log(rng()) > logp_new - logp_old) {
-        //cout << "revert" << endl;
         forecaster_.revert();
-        ++rejected;
+        rejected+=1;
       } else {
-        ++accepted;
+        accepted+=1;
       }
 
-      // tune every 20
-      if(i < burn && i % 20 == 0) {
-        forecaster_.tune(accepted/accepted + rejected);
+      // tune every 50 during burn
+      if(i % 50 == 0 && i < burn) {
+        forecaster_.tune(accepted/(accepted + rejected));
         accepted = 0;
         rejected = 0;
+      }
+
+      // tune every 1000 during actual
+      if(i % 1000 == 0) {
+        forecaster_.tune(accepted/(accepted + rejected));
       }
       if(i > burn && i % thin == 0) {
         forecaster_.tally();
@@ -291,6 +292,7 @@ class NormalLikelihood : public LikelihoodFunctionObject<T> {
   const double tau_;
 public:
   NormalLikelihood(const T& actual_values, MCMCDeterministic<T>& forecaster, const double tau): LikelihoodFunctionObject<T>(actual_values, forecaster), tau_(tau) {}
+
   double logp(const double value, const double mu, const double tau) const {
     return 0.5*log(0.5*tau/arma::math::pi()) - 0.5 * tau * pow(value-mu,2);
   }
@@ -331,12 +333,12 @@ int main() {
   T = gsl_rng_default;
   MCMCJumperBase::setupRNG(gsl_rng_alloc(T));
 
-  const int N = 10;
+  const int N = 1000;
   mat X(N,2);
   mat y(N,1);
 
   base_generator_type sample_generator;
-  normal_distribution<double> nd(0,1);
+  normal_distribution<double> nd(0,2);
   boost::variate_generator<base_generator_type&, normal_distribution<double> > rng_(sample_generator, nd);
 
   for(int i = 0; i < N; i++) {
@@ -346,23 +348,25 @@ int main() {
   }
   vec coefs;
   solve(coefs, X, y);
-  cout << "lm coefs:" << endl;
-  cout << coefs << endl;
   Uniform<vec> B(-1.0,1.0, vec(2));
   EstimatedY obs_fcst(X, B);
-  NormalLikelihood<mat> likelihood(y, obs_fcst, 0.0001);
-  likelihood.sample(1e6, 1e3, 2);
+  NormalLikelihood<mat> likelihood(y, obs_fcst, 100);
+  int iterations = 1e5;
+  likelihood.sample(iterations, 1e4, 4);
   const vector<vec>& coefs_hist(B.getHistory());
 
   vec avg_coefs(2);
   avg_coefs.fill(0);
+  ofstream outfile;
+  outfile.open ("coefs.csv");
   for(int i = 0; i < coefs_hist.size(); i++) {
-    //cout << coefs_hist[i][0] << " " << coefs_hist[i][1] << endl;
+    outfile << coefs_hist[i][0] << "," << coefs_hist[i][1] << endl;
     avg_coefs += coefs_hist[i];
   }
   avg_coefs /= coefs_hist.size();
 
-  cout << "colected " << coefs_hist.size() << " samples." << endl;
+  cout << "iterations: " << iterations << endl;
+  cout << "collected " << coefs_hist.size() << " samples." << endl;
   cout << "lm coefs" << endl << coefs << endl;
   cout << "avg_coefs" << endl << avg_coefs << endl;
   return 1;
