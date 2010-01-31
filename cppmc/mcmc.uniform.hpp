@@ -44,11 +44,7 @@ namespace CppMC {
     double logp() const {
       double ans(0);
       for(int i = 0; i < nrow(MCMCStochastic<T>::value_) * ncol(MCMCStochastic<T>::value_); i++) {
-	if(MCMCStochastic<T>::value_[i] < lower_bound_ || MCMCStochastic<T>::value_[i] > upper_bound_) {
-	  return neg_inf;
-	} else {
-	  ans += -log(upper_bound_ - lower_bound_);
-	}
+	ans += uniform_logp(MCMCStochastic<T>::value_[i], lower_bound_, upper_bound_);
       }
       return ans;
     }
