@@ -37,7 +37,7 @@ namespace CppMC {
     T sd_;
     double scale_;
     void drawRNG() {
-      for(int i = 0; i < nrow(value_) * ncol(value_); i++) {
+      for(size_t i = 0; i < nrow(value_) * ncol(value_); i++) {
 	value_[i] += scale_ * gsl_ran_gaussian(rng_source_, sd_[i]);
       }
     }
@@ -46,7 +46,7 @@ namespace CppMC {
       sd_.fill(1.0);
     }
     void setSD(const double sd) {
-      for(int i = 0; i < ncol(sd_) * nrow(sd_); i++) {
+      for(size_t i = 0; i < ncol(sd_) * nrow(sd_); i++) {
 	sd_[i] = sd;
       }
     }

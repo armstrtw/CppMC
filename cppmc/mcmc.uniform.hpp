@@ -33,7 +33,7 @@ namespace CppMC {
     Uniform(const double lower_bound, const double upper_bound, const T shape): MCMCStochastic<T>(shape),
 										lower_bound_(lower_bound), upper_bound_(upper_bound),
 										rng_dist_(lower_bound_,upper_bound_), rng_(MCMCStochastic<T>::generator_, rng_dist_) {
-      for(int i = 0; i < nrow(MCMCStochastic<T>::value_) * ncol(MCMCStochastic<T>::value_); i++) {
+      for(size_t i = 0; i < nrow(MCMCStochastic<T>::value_) * ncol(MCMCStochastic<T>::value_); i++) {
 	MCMCStochastic<T>::value_[i] = rng_();
       }
       MCMCStochastic<T>::jumper_.setSD(sd());
@@ -43,7 +43,7 @@ namespace CppMC {
     }
     double logp() const {
       double ans(0);
-      for(int i = 0; i < nrow(MCMCStochastic<T>::value_) * ncol(MCMCStochastic<T>::value_); i++) {
+      for(size_t i = 0; i < nrow(MCMCStochastic<T>::value_) * ncol(MCMCStochastic<T>::value_); i++) {
 	ans += uniform_logp(MCMCStochastic<T>::value_[i], lower_bound_, upper_bound_);
       }
       return ans;
