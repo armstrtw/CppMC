@@ -32,9 +32,9 @@ namespace CppMC {
   template<typename T>
   class MCMCJumper : public MCMCJumperBase {
   private:
+    T& value_;
     T old_value_;
     T sd_;
-    T& value_;
     double scale_;
     void drawRNG() {
       for(int i = 0; i < nrow(value_) * ncol(value_); i++) {
