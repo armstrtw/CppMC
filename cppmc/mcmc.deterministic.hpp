@@ -58,7 +58,7 @@ namespace CppMC {
       }
     }
     virtual void registerParents() = 0; // user must provide this function to make object aware of parents
-    virtual T eval() = 0;  // user must provide this function to update object
+    virtual T eval() const = 0;  // user must provide this function to update object
   };
 } // namespace CppMC
 #endif // MCMC_SPECIALIZED_OBJECT_HPP
