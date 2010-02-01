@@ -33,8 +33,8 @@ public:
 
   double logp() const {
     double ans(0);
-    const T& sample = LikelihoodFunction<T>::forecaster_.exposeValue();
-    for(int i = 0; i < LikelihoodFunction<T>::actual_values_.n_elem; i++) {
+    const T& sample =LikelihoodFunction<T>::forecaster_.exposeValue();
+    for(uint i = 0; i < LikelihoodFunction<T>::actual_values_.n_elem; i++) {
       ans += normal_logp(sample[i], LikelihoodFunction<T>::actual_values_[i], tau_);
     }
     ans += LikelihoodFunction<T>::forecaster_.logp();
