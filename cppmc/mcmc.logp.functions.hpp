@@ -18,20 +18,25 @@
 #ifndef MCMC_LOGP_FUNCTIONS_HPP
 #define MCMC_LOGP_FUNCTIONS_HPP
 
+#include <cmath>
 #include <armadillo>
 
 namespace CppMC {
+  using std::log;
 
   template<typename T>
+  inline
   double discrete_uniform_logp(const T x, const T lower, const T upper) {
       return (x < lower || x > upper) ? neg_inf : -log(upper - lower + 1.0);
   }
 
   template<typename T>
+  inline
   double uniform_logp(const T x, const T lower, const T upper) {
       return (x < lower || x > upper) ? neg_inf : -log(upper - lower);
   }
   template<typename T>
+  inline
   double normal_logp(const T x, const T mu, const T tau) {
     return 0.5*log(0.5*tau/arma::math::pi()) - 0.5 * tau * pow(x-mu,2);
   }
