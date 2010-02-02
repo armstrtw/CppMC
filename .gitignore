@@ -6,3 +6,4 @@
 *.so
 a.out
 *.csv
+out.txt
