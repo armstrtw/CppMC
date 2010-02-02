@@ -32,16 +32,10 @@ namespace CppMC {
   class MCMCJumper : public MCMCJumperBase {
   private:
     T& value_;
-    T old_value_;
     T sd_;
     double scale_;
-    void drawRNG() {
-      for(size_t i = 0; i < nrow(value_) * ncol(value_); i++) {
-	value_[i] += scale_ * sd_[i] * rng_();
-      }
-    }
   public:
-    MCMCJumper(T& value): value_(value), old_value_(value), sd_(value), scale_(1.0) {
+    MCMCJumper(T& value): value_(value), sd_(value), scale_(1.0) {
       sd_.fill(1.0);
     }
     void setSD(const double sd) {
@@ -53,13 +47,10 @@ namespace CppMC {
       scale_ = scale;
     }
     void jump() {
-      old_value_ = value_;
-      drawRNG();
+      for(size_t i = 0; i < nrow(value_) * ncol(value_); i++) {
+	value_[i] += scale_ * sd_[i] * rng_();
+      }
     }
-    void revert() {
-      value_ = old_value_;
-    }
-
     void tune(const double acceptance_rate) {
       //cout << "acceptance_rate: " << acceptance_rate << endl;
       if(acceptance_rate < .01) {

@@ -5,12 +5,11 @@
 #include <cmath>
 
 #include <armadillo>
-#include <gsl/gsl_rng.h>
-#include <gsl/gsl_randist.h>
 #include <boost/random.hpp>
 #include <boost/random/uniform_real.hpp>
 #include <boost/math/distributions/uniform.hpp>
 
+#include <cppmc/mcmc.deterministic.hpp>
 #include <cppmc/mcmc.uniform.hpp>
 #include <cppmc/mcmc.normal.likelihood.hpp>
 
@@ -44,6 +43,8 @@ public:
     parents_.push_back(&b_);
   }
   mat eval() const {
+    cout << "X" << endl << X_;
+    //cout << "b" << endl << b_;
     return X_ * b_.exposeValue();
   }
 };
@@ -54,7 +55,7 @@ base_generator_type MCMCJumperBase::generator_;
 
 int main() {
   const int NR = 1000;
-  const int NC = 20;
+  const int NC = 2;
   mat X = rand<mat>(NR,NC);
   mat y = rand<mat>(NR,1);
 

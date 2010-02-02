@@ -27,15 +27,18 @@ namespace CppMC {
   class MCMCSpecialized : public MCMCObject {
   protected:
     T value_;
+    T old_value_;
     std::vector<T> history_;
   public:
     MCMCSpecialized(const T& shape): MCMCObject(), value_(shape) {}
     const T& exposeValue() const {
       return value_;
     }
-    void tally() {
+    void revert_self() {
+      value_ = old_value_;
+    }
+    void tally_self() {
       history_.push_back(value_);
-      tally_parents();
     }
     const std::vector<T>& getHistory() const {
       return history_;

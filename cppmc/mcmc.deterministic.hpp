@@ -24,41 +24,20 @@ namespace CppMC {
 
   template<typename T>
   class MCMCDeterministic : public MCMCSpecialized<T> {
-  protected:
-    std::vector<MCMCObject*> parents_;
   public:
     MCMCDeterministic(const T& initial_value): MCMCSpecialized<T>(initial_value) {}
-    double logp() const {
-      double ans(0);
-      for(std::vector<MCMCObject*>::const_iterator  iter = parents_.begin(); iter!=parents_.end(); iter++) {
-	ans += (*iter)->logp();
-      }
-      return ans;
-    }
-    void jump(int current_iteration) {
-      for(std::vector<MCMCObject*>::iterator iter = parents_.begin(); iter!=parents_.end(); iter++) {
-	(*iter)->jump(current_iteration);
-      }
-      MCMCSpecialized<T>::value_ = eval();
-    }
-    void revert() {
-      for(std::vector<MCMCObject*>::iterator iter = parents_.begin(); iter!=parents_.end(); iter++) {
-	(*iter)->revert();
-      }
-      MCMCSpecialized<T>::value_ = eval();
-    }
-    void tally_parents() {
-      for(std::vector<MCMCObject*>::iterator iter = parents_.begin(); iter!=parents_.end(); iter++) {
-	(*iter)->tally();
-      }
-    }
-    void tune(const double acceptance_rate) {
-      for(std::vector<MCMCObject*>::iterator iter = parents_.begin(); iter!=parents_.end(); iter++) {
-	(*iter)->tune(acceptance_rate);
-      }
-    }
-    virtual void registerParents() = 0; // user must provide this function to make object aware of parents
-    virtual T eval() const = 0;  // user must provide this function to update object
+
+    // deterministics only derive their logp from their parents
+    double calc_logp_self() const { return 0; }
+
+    // assumes parents have already been updated
+    void jump_self() { MCMCSpecialized<T>::value_ = eval(); }
+
+    // no need to tune deterministic
+    void tune_self(const double acceptance_rate) {}
+
+    // user must provide this function to update object
+    virtual T eval() const = 0;
   };
 } // namespace CppMC
 #endif // MCMC_SPECIALIZED_OBJECT_HPP

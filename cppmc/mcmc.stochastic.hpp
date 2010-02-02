@@ -23,30 +23,21 @@
 
 namespace CppMC {
 
-  const double neg_inf(-std::numeric_limits<double>::infinity());
+
 
   template<typename T>
   class MCMCStochastic : public MCMCSpecialized<T> {
   protected:
-    int iteration_;
     MCMCJumper<T> jumper_;
   public:
-    MCMCStochastic(const T& shape): MCMCSpecialized<T>(shape), iteration_(-1), jumper_(MCMCSpecialized<T>::value_) {}
-    virtual double logp() const = 0;
-    void jump(const int current_iteration) {
-      // only jump if we hevn't already jumped yet
-      if(iteration_ == current_iteration) {
-	return;
-      }
-      ++iteration_;
+    MCMCStochastic(const T& shape): MCMCSpecialized<T>(shape), jumper_(MCMCSpecialized<T>::value_) {}
+    void jump_self() {
       jumper_.jump();
     }
-    void revert() {
-      jumper_.revert();
-    }
-    void tune(const double acceptance_rate) {
+    void tune_self(const double acceptance_rate) {
       jumper_.tune(acceptance_rate);
     }
+    virtual double sd() const = 0;
   };
 } // namespace CppMC
 #endif // MCMC_STOCHASTIC_HPP

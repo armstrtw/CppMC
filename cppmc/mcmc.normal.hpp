@@ -43,7 +43,7 @@ namespace CppMC {
     double sd() {
       return sqrt(tau_);
     }
-    double logp() const {
+    double calc_logp_self() const {
       double ans(0);
       for(size_t i = 0; i < nrow(MCMCStochastic<T>::value_) * ncol(MCMCStochastic<T>::value_); i++) {
 	ans += normal_logp(MCMCStochastic<T>::value_[i], mu_, tau_);

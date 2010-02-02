@@ -18,25 +18,23 @@
 #ifndef MCMC_LIKELIHOOD_FUNCTION_HPP
 #define MCMC_LIKELIHOOD_FUNCTION_HPP
 
-#include <cppmc/mcmc.deterministic.hpp>
+#include <cppmc/mcmc.object.hpp>
+#include <cppmc/mcmc.specialized.hpp>
 
 namespace CppMC {
 
   template<typename T>
-  class LikelihoodFunction {
+  class LikelihoodFunction : public MCMCObject {
+  private:
     // for acceptace test
     base_generator_type generator_;
     boost::uniform_real<> uni_dist_;
-    boost::variate_generator<base_generator_type&, boost::uniform_real<> > rng_;
+    boost::variate_generator<base_generator_type&, boost::uniform_real<> > uni_rng_;
   protected:
     const T& actual_values_;
-    MCMCDeterministic<T>& forecaster_;
+    MCMCSpecialized<T>& forecast_;
   public:
-    LikelihoodFunction(const T& actual_values_, MCMCDeterministic<T>& forecaster): generator_(20u), uni_dist_(0,1), rng_(generator_, uni_dist_), actual_values_(actual_values_), forecaster_(forecaster) {}
-    double rng() {
-      return rng_();
-    }
-    virtual double logp() const = 0;
+    LikelihoodFunction(const T& actual_values, MCMCSpecialized<T>& forecast): MCMCObject(), generator_(20u), uni_dist_(0,1), uni_rng_(generator_, uni_dist_), actual_values_(actual_values), forecast_(forecast) {}
 
     void sample(int iterations, int burn, int thin) {
       double accepted(0);
@@ -44,10 +42,10 @@ namespace CppMC {
 
       for(int i = 0; i < iterations; i++) {
 	double logp_old = logp();
-	forecaster_.jump(i);
+	forecast_.jump(i);
 	double logp_new = logp();
-	if(logp_new == neg_inf || log(rng()) > logp_new - logp_old) {
-	  forecaster_.revert();
+	if(logp_new == neg_inf || log(uni_rng_()) > logp_new - logp_old) {
+	  forecast_.revert();
 	  rejected+=1;
 	} else {
 	  accepted+=1;
@@ -55,20 +53,30 @@ namespace CppMC {
 
 	// tune every 50 during burn
 	if(i % 50 == 0 && i < burn) {
-	  forecaster_.tune(accepted/(accepted + rejected));
+	  forecast_.tune(accepted/(accepted + rejected));
 	  accepted = 0;
 	  rejected = 0;
 	}
 
 	// tune every 1000 during actual
 	if(i % 1000 == 0) {
-	  forecaster_.tune(accepted/(accepted + rejected));
+	  forecast_.tune(accepted/(accepted + rejected));
 	}
 	if(i > burn && i % thin == 0) {
-	  forecaster_.tally();
+	  forecast_.tally();
 	}
       }
     }
+
+    void registerParents() {
+      MCMCObject::parents_.push_back(&forecast_);
+    }
+    
+    // don't need any of these
+    void jump_self() {}
+    void revert_self() {}
+    void tally_self() {}
+    void tune_self(const double acceptance_rate) {}
   };
 } // namespace CppMC
 #endif // MCMC_LIKELIHOOD_FUNCTION_HPP

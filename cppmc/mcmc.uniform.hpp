@@ -18,6 +18,7 @@
 #ifndef MCMC_UNIFORM_HPP
 #define MCMC_UNIFORM_HPP
 
+#include <iostream>
 #include <cppmc/mcmc.stochastic.hpp>
 
 namespace CppMC {
@@ -37,18 +38,24 @@ namespace CppMC {
 	MCMCStochastic<T>::value_[i] = rng_();
       }
       MCMCStochastic<T>::jumper_.setSD(sd());
+      std::cout << "uniform init:" << std::endl << MCMCStochastic<T>::value_;
     }
-    double sd() {
-      return (upper_bound_ - lower_bound_)/pow(12,0.5);
-    }
-    double logp() const {
+    double calc_logp_self() const {
       double ans(0);
       for(size_t i = 0; i < nrow(MCMCStochastic<T>::value_) * ncol(MCMCStochastic<T>::value_); i++) {
 	ans += uniform_logp(MCMCStochastic<T>::value_[i], lower_bound_, upper_bound_);
       }
       return ans;
     }
-    void tally_parents() {}  // FIXME: will need this when upper/lower are alowed to be stocastics
+
+    void registerParents() {
+      // only when lower_bound_ and upper_bound_ are declared as MCMCobjects
+      //MCMCStochastic<T>::parents_.push_back(lower_bound_);
+      //MCMCStochastic<T>::parents_.push_back(upper_bound_);
+    }
+    double sd() const {
+      return (upper_bound_ - lower_bound_)/pow(12,0.5);
+    }
   };
 } // namespace CppMC
 #endif // MCMC_UNIFORM_HPP
