@@ -22,7 +22,7 @@ using std::ofstream;
 using std::cout;
 using std::endl;
 using boost::math::uniform;
-typedef boost::minstd_rand base_generator_type;
+typedef boost::lagged_fibonacci607 base_generator_type;
 
 
 inline int nrow(vec v) { return v.n_rows; }
@@ -43,39 +43,28 @@ public:
   void registerParents() {
     parents_.push_back(&b_);
   }
-  mat eval() {
+  mat eval() const {
     return X_ * b_.exposeValue();
   }
 };
 
 // global rng generators
-gsl_rng* MCMCJumperBase::rng_source_ =  NULL;
+base_generator_type MCMCJumperBase::generator_;
 base_generator_type MCMCObject::generator_;
 
 int main() {
-  const gsl_rng_type* T;
-  gsl_rng_env_setup();
-  T = gsl_rng_default;
-  MCMCJumperBase::setupRNG(gsl_rng_alloc(T));
-
   const int N = 1000;
-  mat X(N,2);
-  mat y(N,1);
+  mat X = rand<mat>(N,2);
+  mat y = rand<mat>(N,1);
 
-  base_generator_type sample_generator;
-  normal_distribution<double> nd(0,2);
-  boost::variate_generator<base_generator_type&, normal_distribution<double> > rng_(sample_generator, nd);
+  // make X col 0 const
+  for(int i = 0; i < N; i++) { X(i,0) = 1; }
 
-  for(int i = 0; i < N; i++) {
-    y[i] = rng_();
-    X(i,0) = 1;
-    X(i,1) = rng_();
-  }
   vec coefs;
   solve(coefs, X, y);
   Uniform<vec> B(-1.0,1.0, vec(2));
   EstimatedY obs_fcst(X, B);
-  NormalLikelihood<mat> likelihood(y, obs_fcst, 100);
+  NormalLikelihood<mat> likelihood(y, obs_fcst, 0.0001);
   int iterations = 1e5;
   likelihood.sample(iterations, 1e4, 4);
   const vector<vec>& coefs_hist(B.getHistory());
@@ -84,7 +73,7 @@ int main() {
   avg_coefs.fill(0);
   ofstream outfile;
   outfile.open ("coefs.csv");
-  for(int i = 0; i < coefs_hist.size(); i++) {
+  for(uint i = 0; i < coefs_hist.size(); i++) {
     outfile << coefs_hist[i][0] << "," << coefs_hist[i][1] << endl;
     avg_coefs += coefs_hist[i];
   }

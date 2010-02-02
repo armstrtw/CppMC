@@ -21,12 +21,11 @@
 namespace CppMC {
   class MCMCJumperBase {
   protected:
-    static gsl_rng* rng_source_;
+    static base_generator_type generator_;
+    boost::normal_distribution<double> rng_dist_;
+    boost::variate_generator<base_generator_type&, boost::normal_distribution<double> > rng_;
   public:
-    MCMCJumperBase() {}
-    static void setupRNG(gsl_rng* rng) {
-      rng_source_ = rng;
-    }
+    MCMCJumperBase(): rng_dist_(0, 1.0), rng_(generator_, rng_dist_) {}
   };
 
   template<typename T>
@@ -38,7 +37,7 @@ namespace CppMC {
     double scale_;
     void drawRNG() {
       for(size_t i = 0; i < nrow(value_) * ncol(value_); i++) {
-	value_[i] += scale_ * gsl_ran_gaussian(rng_source_, sd_[i]);
+	value_[i] += scale_ * sd_[i] * rng_();
       }
     }
   public:
