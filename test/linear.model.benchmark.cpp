@@ -43,8 +43,6 @@ public:
     parents_.push_back(&b_);
   }
   mat eval() const {
-    cout << "X" << endl << X_;
-    //cout << "b" << endl << b_;
     return X_ * b_.exposeValue();
   }
 };
@@ -62,7 +60,7 @@ int main() {
   Uniform<vec> B(-1.0,1.0, vec(NC));
   EstimatedY obs_fcst(X, B);
   NormalLikelihood<mat> likelihood(y, obs_fcst, 100);
-  int iterations = 1e4;
+  int iterations = 1e5;
   likelihood.sample(iterations, 1e2, 4);
   return 1;
 }

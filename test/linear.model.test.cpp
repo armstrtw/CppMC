@@ -5,12 +5,11 @@
 #include <cmath>
 
 #include <armadillo>
-#include <gsl/gsl_rng.h>
-#include <gsl/gsl_randist.h>
 #include <boost/random.hpp>
 #include <boost/random/uniform_real.hpp>
 #include <boost/math/distributions/uniform.hpp>
 
+#include <cppmc/mcmc.deterministic.hpp>
 #include <cppmc/mcmc.uniform.hpp>
 #include <cppmc/mcmc.normal.likelihood.hpp>
 
@@ -22,15 +21,15 @@ using std::ofstream;
 using std::cout;
 using std::endl;
 using boost::math::uniform;
-typedef boost::lagged_fibonacci607 base_generator_type;
+typedef boost::minstd_rand base_generator_type;
 
 
-inline int nrow(vec v) { return v.n_rows; }
-inline int ncol(vec v) { return v.n_cols; }
-inline int nrow(mat m) { return m.n_rows; }
-inline int ncol(mat m) { return m.n_cols; }
-//inline int size(vec v) { return nrow(v) * ncol(v); }
-inline int size(vec m) { return nrow(m) * ncol(m); }
+inline uint nrow(vec v) { return v.n_rows; }
+inline uint ncol(vec v) { return v.n_cols; }
+inline uint nrow(mat m) { return m.n_rows; }
+inline uint ncol(mat m) { return m.n_cols; }
+//inline uint size(vec v) { return nrow(v) * ncol(v); }
+inline uint size(vec m) { return nrow(m) * ncol(m); }
 
 class EstimatedY : public MCMCDeterministic<mat> {
 private:
@@ -64,7 +63,7 @@ int main() {
   solve(coefs, X, y);
   Uniform<vec> B(-1.0,1.0, vec(2));
   EstimatedY obs_fcst(X, B);
-  NormalLikelihood<mat> likelihood(y, obs_fcst, 0.0001);
+  NormalLikelihood<mat> likelihood(y, obs_fcst, 100);
   int iterations = 1e5;
   likelihood.sample(iterations, 1e4, 4);
   const vector<vec>& coefs_hist(B.getHistory());

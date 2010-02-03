@@ -34,7 +34,9 @@ namespace CppMC {
     const T& actual_values_;
     MCMCSpecialized<T>& forecast_;
   public:
-    LikelihoodFunction(const T& actual_values, MCMCSpecialized<T>& forecast): MCMCObject(), generator_(20u), uni_dist_(0,1), uni_rng_(generator_, uni_dist_), actual_values_(actual_values), forecast_(forecast) {}
+    LikelihoodFunction(const T& actual_values, MCMCSpecialized<T>& forecast): MCMCObject(), generator_(20u), uni_dist_(0,1), uni_rng_(generator_, uni_dist_), actual_values_(actual_values), forecast_(forecast) {
+      registerParents();
+    }
 
     void sample(int iterations, int burn, int thin) {
       double accepted(0);
@@ -42,10 +44,10 @@ namespace CppMC {
 
       for(int i = 0; i < iterations; i++) {
 	double logp_old = logp();
-	forecast_.jump(i);
+	jump(i);
 	double logp_new = logp();
 	if(logp_new == neg_inf || log(uni_rng_()) > logp_new - logp_old) {
-	  forecast_.revert();
+	  revert();
 	  rejected+=1;
 	} else {
 	  accepted+=1;
@@ -53,17 +55,17 @@ namespace CppMC {
 
 	// tune every 50 during burn
 	if(i % 50 == 0 && i < burn) {
-	  forecast_.tune(accepted/(accepted + rejected));
+	  tune(accepted/(accepted + rejected));
 	  accepted = 0;
 	  rejected = 0;
 	}
 
 	// tune every 1000 during actual
 	if(i % 1000 == 0) {
-	  forecast_.tune(accepted/(accepted + rejected));
+	  tune(accepted/(accepted + rejected));
 	}
 	if(i > burn && i % thin == 0) {
-	  forecast_.tally();
+	  tally();
 	}
       }
     }
@@ -74,6 +76,7 @@ namespace CppMC {
     
     // don't need any of these
     void jump_self() {}
+    void preserve_self() {}
     void revert_self() {}
     void tally_self() {}
     void tune_self(const double acceptance_rate) {}

@@ -34,6 +34,9 @@ namespace CppMC {
     const T& exposeValue() const {
       return value_;
     }
+    void preserve_self() {
+      old_value_ = value_;
+    }
     void revert_self() {
       value_ = old_value_;
     }

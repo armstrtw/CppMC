@@ -46,6 +46,7 @@ namespace CppMC {
 
       old_logp_ = logp_;               // preserve logp value
       jump_parents(current_iteration); // jump parents before jump self
+      preserve_self();
       jump_self();                     // node specific jump
       logp_ = calc_logp_self();        // update logp value
     }
@@ -107,6 +108,7 @@ namespace CppMC {
     virtual void registerParents() = 0; // user must provide this function to make object aware of parents
     virtual double calc_logp_self() const = 0;  // must be implemented for each specific distribution or likelihood
     virtual void jump_self() = 0; // stocastics will jump values, determinsitics will jump parents & update
+    virtual void preserve_self() = 0;       // in mcmc.specialized
     virtual void revert_self() = 0;       // in mcmc.specialized
     virtual void tally_self() = 0;        // in mcmc.specialized
     virtual void tune_self(const double acceptance_rate) = 0;

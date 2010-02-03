@@ -38,7 +38,6 @@ namespace CppMC {
 	MCMCStochastic<T>::value_[i] = rng_();
       }
       MCMCStochastic<T>::jumper_.setSD(sd());
-      std::cout << "uniform init:" << std::endl << MCMCStochastic<T>::value_;
     }
     double calc_logp_self() const {
       double ans(0);
