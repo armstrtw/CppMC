@@ -32,16 +32,16 @@ namespace CppMC {
     boost::normal_distribution<double> rng_dist_;
     boost::variate_generator<base_generator_type&, boost::normal_distribution<double> > rng_;
   public:
-    Normal(const double mu, const double tau, const T shape): MCMCStochastic<T>(shape),
-                                                              mu_(mu), tau_(tau),
-                                                              rng_dist_(mu_, tau_), rng_(MCMCStochastic<T>::generator_, rng_dist_) {
+    Normal(const double mu, const double standard_deviation, const T shape): MCMCStochastic<T>(shape),
+                                                                             mu_(mu), tau_(MCMCObject::sd_to_tau(standard_deviation)),
+                                                                             rng_dist_(mu_, standard_deviation), rng_(MCMCStochastic<T>::generator_, rng_dist_) {
       for(size_t i = 0; i < nrow(MCMCStochastic<T>::value_) * ncol(MCMCStochastic<T>::value_); i++) {
 	MCMCStochastic<T>::value_[i] = rng_();
       }
       MCMCStochastic<T>::jumper_.setSD(sd());
     }
-    double sd() {
-      return sqrt(tau_);
+    double sd() const {
+      return MCMCObject::tau_to_sd(tau_);
     }
     double calc_logp_self() const {
       double ans(0);
@@ -51,6 +51,9 @@ namespace CppMC {
       return ans;
     }
     void tally_parents() {}
+
+    // need to define when mu and sd are allowed to be MCMC objects
+    void registerParents() {}
   };
 } // namespace CppMC
 #endif // MCMC_NORMAL_HPP

@@ -11,6 +11,7 @@
 #include <boost/random/uniform_real.hpp>
 #include <boost/math/distributions/uniform.hpp>
 
+#include <cppmc/mcmc.deterministic.hpp>
 #include <cppmc/mcmc.normal.hpp>
 #include <cppmc/mcmc.normal.likelihood.hpp>
 
@@ -63,9 +64,9 @@ int main() {
 
   vec coefs;
   solve(coefs, X, y);
-  Normal<vec> B(0.0, 10, vec(2));
+  Normal<vec> B(0.0, 1.0, vec(2));
   EstimatedY obs_fcst(X, B);
-  NormalLikelihood<mat> likelihood(y, obs_fcst, 100);
+  NormalLikelihood<mat> likelihood(y, obs_fcst, 1);
   int iterations = 1e5;
   likelihood.sample(iterations, 1e2, 4);
   const vector<vec>& coefs_hist(B.getHistory());

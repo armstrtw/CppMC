@@ -30,7 +30,7 @@ class NormalLikelihood : public LikelihoodFunction<T> {
  private:
   const double tau_;
 public:
-  NormalLikelihood(const T& actual_values, MCMCSpecialized<T>& forecast, const double tau): LikelihoodFunction<T>(actual_values, forecast), tau_(tau) {}
+  NormalLikelihood(const T& actual_values, MCMCSpecialized<T>& forecast, const double standard_deviation): LikelihoodFunction<T>(actual_values, forecast), tau_(MCMCObject::sd_to_tau(standard_deviation)) {}
 
   double calc_logp_self() const {
     double ans(0);    

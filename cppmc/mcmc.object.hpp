@@ -36,7 +36,8 @@ namespace CppMC {
     MCMCObject(): iteration_(-1), logp_(neg_inf), old_logp_(neg_inf) {}    
     double logp() const { return logp_self() + logp_parents(); }
     double logp_self() const { return logp_; }
-
+    double static tau_to_sd(const double tau) { return 1/sqrt(tau); }
+    double static sd_to_tau(const double sd) { return 1/pow(sd,2.0); }
     void jump(const int current_iteration) {
       // only jump if we hevn't already jumped yet
       if(iteration_ == current_iteration) {
