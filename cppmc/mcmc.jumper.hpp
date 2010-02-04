@@ -53,29 +53,18 @@ namespace CppMC {
     }
     void tune(const double acceptance_rate) {
       //cout << "acceptance_rate: " << acceptance_rate << endl;
-      if(acceptance_rate < .01) {
+      if(acceptance_rate < .001) {
 	scale_ *= .1;
-	return;
-      }
-      if(acceptance_rate < .05) {
+      } else if(acceptance_rate < .05) {
 	scale_ *= .5;
-	return;
-      }
-      if(acceptance_rate < .2) {
+      } else if(acceptance_rate < .2) {
 	scale_ *= .9;
-	return;
-      }
-      if(acceptance_rate < .5) {
-	scale_ *= 1.1;
-	return;
-      }
-      if(acceptance_rate > .95) {
+      } else if(acceptance_rate > .95) {
 	scale_ *= 10;
-	return;
-      }
-      if(acceptance_rate > .75) {
+      } else if(acceptance_rate > .75) {
 	scale_ *= 2;
-	return;
+      } else if(acceptance_rate > .5) {
+	scale_ *= 1.1;
       }
     }
   };
