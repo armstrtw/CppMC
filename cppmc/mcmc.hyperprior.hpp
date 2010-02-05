@@ -23,9 +23,9 @@
 namespace CppMC {
 
   template<typename T>
-  class HyperPrior : public MCMCSpecialized<T> {
+  class HyperPrior : public MCMCSpecialized<DataT> {
   public:
-    HyperPrior(const T& value) : MCMCSpecialized<T>(), MCMCSpecialized<T>::value_(value) {};
+    HyperPrior(const T& value) : MCMCSpecialized<DataT>(), MCMCSpecialized<DataT>::value_(value) {};
     double logp() const { return static_cast<double>(0); }
     void tally() {}
     void tally_parents() {}

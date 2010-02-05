@@ -25,19 +25,18 @@ using std::endl;
 using boost::math::uniform;
 typedef boost::minstd_rand base_generator_type;
 
-
-class EstimatedY : public MCMCDeterministic<double> {
+class EstimatedY : public MCMCDeterministic<double,Mat> {
 private:
   mat& X_;
-  MCMCStochastic<double>& b_;
+  MCMCStochastic<double,Col>& b_;
 public:
-  EstimatedY(Mat<double>& X, MCMCStochastic<double>& b): MCMCDeterministic<double>(X * b.exposeValue()), X_(X), b_(b) {
+  EstimatedY(Mat<double>& X, MCMCStochastic<double,Col>& b): MCMCDeterministic<double,Mat>(X * b.exposeValue()), X_(X), b_(b) {
     registerParents();
   }
   void registerParents() {
     parents_.push_back(&b_);
   }
-  mat eval() const {
+  Mat<double> eval() const {
     return X_ * b_.exposeValue();
   }
 };
@@ -57,12 +56,12 @@ int main() {
 
   vec coefs;
   solve(coefs, X, y);
-  Normal<double> B(0.0, 1.0, mat(2,1));
+  Normal<double,Col> B(0.0, 1.0, vec(2));
   EstimatedY obs_fcst(X, B);
-  NormalLikelihood<double> likelihood(y, obs_fcst, 1);
+  NormalLikelihood<double,Mat> likelihood(y, obs_fcst, 1);
   int iterations = 1e5;
   likelihood.sample(iterations, 1e2, 4);
-  const vector<mat>& coefs_hist(B.getHistory());
+  const vector<vec>& coefs_hist(B.getHistory());
 
   mat avg_coefs(2,1);
   avg_coefs.fill(0);

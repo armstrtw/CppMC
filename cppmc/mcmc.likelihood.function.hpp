@@ -23,7 +23,8 @@
 
 namespace CppMC {
 
-  template<typename T>
+  template<typename DataT,
+           template<typename> class ArmaT>
   class LikelihoodFunction : public MCMCObject {
   private:
     // for acceptace test
@@ -31,10 +32,10 @@ namespace CppMC {
     boost::uniform_real<> uni_dist_;
     boost::variate_generator<base_generator_type&, boost::uniform_real<> > uni_rng_;
   protected:
-    const Mat<T>& actual_values_;
-    MCMCSpecialized<T>& forecast_;
+    const ArmaT<DataT>& actual_values_;
+    MCMCSpecialized<DataT,ArmaT>& forecast_;
   public:
-    LikelihoodFunction(const Mat<T>& actual_values, MCMCSpecialized<T>& forecast): MCMCObject(), generator_(20u), uni_dist_(0,1), uni_rng_(generator_, uni_dist_), actual_values_(actual_values), forecast_(forecast) {
+    LikelihoodFunction(const ArmaT<DataT>& actual_values, MCMCSpecialized<DataT,ArmaT>& forecast): MCMCObject(), generator_(20u), uni_dist_(0,1), uni_rng_(generator_, uni_dist_), actual_values_(actual_values), forecast_(forecast) {
       registerParents();
     }
 

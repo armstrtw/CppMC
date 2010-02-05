@@ -24,29 +24,30 @@
 
 namespace CppMC {
 
-  template<typename T>
-  class Normal : public MCMCStochastic<T> {
+  template<typename DataT,
+           template<typename> class ArmaT>
+  class Normal : public MCMCStochastic<DataT,ArmaT> {
   private:
     const double mu_;
     const double tau_;
     boost::normal_distribution<double> rng_dist_;
     boost::variate_generator<base_generator_type&, boost::normal_distribution<double> > rng_;
   public:
-    Normal(const double mu, const double standard_deviation, const Mat<T> shape): MCMCStochastic<T>(shape),
-                                                                             mu_(mu), tau_(MCMCObject::sd_to_tau(standard_deviation)),
-                                                                             rng_dist_(mu_, standard_deviation), rng_(MCMCStochastic<T>::generator_, rng_dist_) {
-      for(size_t i = 0; i < MCMCStochastic<T>::size(); i++) {
-	MCMCStochastic<T>::value_[i] = rng_();
+    Normal(const double mu, const double standard_deviation, const ArmaT<DataT> shape): MCMCStochastic<DataT,ArmaT>(shape),
+                                                                                        mu_(mu), tau_(MCMCObject::sd_to_tau(standard_deviation)),
+                                                                                        rng_dist_(mu_, standard_deviation), rng_(MCMCStochastic<DataT,ArmaT>::generator_, rng_dist_) {
+      for(size_t i = 0; i < MCMCStochastic<DataT,ArmaT>::size(); i++) {
+	MCMCStochastic<DataT,ArmaT>::value_[i] = rng_();
       }
-      MCMCStochastic<T>::jumper_.setSD(sd());
+      MCMCStochastic<DataT,ArmaT>::jumper_.setSD(sd());
     }
     double sd() const {
       return MCMCObject::tau_to_sd(tau_);
     }
     double calc_logp_self() const {
       double ans(0);
-      for(size_t i = 0; i < MCMCStochastic<T>::size(); i++) {
-	ans += normal_logp(MCMCStochastic<T>::value_[i], mu_, tau_);
+      for(size_t i = 0; i < MCMCStochastic<DataT,ArmaT>::size(); i++) {
+	ans += normal_logp(MCMCStochastic<DataT,ArmaT>::value_[i], mu_, tau_);
       }
       return ans;
     }

@@ -22,34 +22,35 @@
 
 namespace CppMC {
 
-  template<typename T>
-  class Uniform : public MCMCStochastic<T> {
+  template<typename DataT,
+           template<typename> class ArmaT>
+  class Uniform : public MCMCStochastic<DataT,ArmaT> {
   private:
     const double lower_bound_;
     const double upper_bound_;
     boost::uniform_real<> rng_dist_;
     boost::variate_generator<base_generator_type&, boost::uniform_real<> > rng_;
   public:
-    Uniform(const double lower_bound, const double upper_bound, const Mat<T> shape): MCMCStochastic<T>(shape),
+    Uniform(const double lower_bound, const double upper_bound, const ArmaT<DataT> shape): MCMCStochastic<DataT,ArmaT>(shape),
                                                                                      lower_bound_(lower_bound), upper_bound_(upper_bound),
-                                                                                     rng_dist_(lower_bound_,upper_bound_), rng_(MCMCStochastic<T>::generator_, rng_dist_) {
-      for(size_t i = 0; i < MCMCStochastic<T>::size(); i++) {
-	MCMCStochastic<T>::value_[i] = rng_();
+                                                                                     rng_dist_(lower_bound_,upper_bound_), rng_(MCMCStochastic<DataT,ArmaT>::generator_, rng_dist_) {
+      for(size_t i = 0; i < MCMCStochastic<DataT,ArmaT>::size(); i++) {
+	MCMCStochastic<DataT,ArmaT>::value_[i] = rng_();
       }
-      MCMCStochastic<T>::jumper_.setSD(sd());
+      MCMCStochastic<DataT,ArmaT>::jumper_.setSD(sd());
     }
     double calc_logp_self() const {
       double ans(0);
-      for(size_t i = 0; i < MCMCStochastic<T>::size(); i++) {
-	ans += uniform_logp(MCMCStochastic<T>::value_[i], lower_bound_, upper_bound_);
+      for(size_t i = 0; i < MCMCStochastic<DataT,ArmaT>::size(); i++) {
+	ans += uniform_logp(MCMCStochastic<DataT,ArmaT>::value_[i], lower_bound_, upper_bound_);
       }
       return ans;
     }
 
     void registerParents() {
       // only when lower_bound_ and upper_bound_ are declared as MCMCobjects
-      //MCMCStochastic<T>::parents_.push_back(lower_bound_);
-      //MCMCStochastic<T>::parents_.push_back(upper_bound_);
+      //MCMCStochastic<DataT,ArmaT>::parents_.push_back(lower_bound_);
+      //MCMCStochastic<DataT,ArmaT>::parents_.push_back(upper_bound_);
     }
     double sd() const {
       return (upper_bound_ - lower_bound_)/pow(12,0.5);

@@ -23,18 +23,18 @@ using std::endl;
 using boost::math::uniform;
 typedef boost::minstd_rand base_generator_type;
 
-class EstimatedY : public MCMCDeterministic<double> {
+class EstimatedY : public MCMCDeterministic<double,Mat> {
 private:
   mat& X_;
-  MCMCStochastic<double>& b_;
+  MCMCStochastic<double,Col>& b_;
 public:
-  EstimatedY(Mat<double>& X, MCMCStochastic<double>& b): MCMCDeterministic<double>(X * b.exposeValue()), X_(X), b_(b) {
+  EstimatedY(Mat<double>& X, MCMCStochastic<double,Col>& b): MCMCDeterministic<double,Mat>(X * b.exposeValue()), X_(X), b_(b) {
     registerParents();
   }
   void registerParents() {
     parents_.push_back(&b_);
   }
-  mat eval() const {
+  Mat<double> eval() const {
     return X_ * b_.exposeValue();
   }
 };
@@ -49,9 +49,9 @@ int main() {
   mat X = rand<mat>(NR,NC);
   mat y = rand<mat>(NR,1);
 
-  Uniform<double> B(-1.0,1.0, mat(NC,1));
+  Uniform<double,Col> B(-1.0,1.0, vec(NC));
   EstimatedY obs_fcst(X, B);
-  NormalLikelihood<double> likelihood(y, obs_fcst, 100);
+  NormalLikelihood<double,Mat> likelihood(y, obs_fcst, 100);
   int iterations = 1e5;
   likelihood.sample(iterations, 1e2, 4);
   return 1;

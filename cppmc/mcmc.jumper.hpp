@@ -28,14 +28,15 @@ namespace CppMC {
     MCMCJumperBase(): rng_dist_(0, 1.0), rng_(generator_, rng_dist_) {}
   };
 
-  template<typename T>
+  template<typename DataT,
+           template<typename> class ArmaT>
   class MCMCJumper : public MCMCJumperBase {
   private:
-    Mat<T>& value_;
-    Mat<T> sd_;
+    ArmaT<DataT>& value_;
+    ArmaT<DataT> sd_;
     double scale_;
   public:
-    MCMCJumper(Mat<T>& value): value_(value), sd_(value), scale_(1.0) {
+    MCMCJumper(ArmaT<DataT>& value): value_(value), sd_(value), scale_(1.0) {
       sd_.fill(1.0);
     }
     void setSD(const double sd) {

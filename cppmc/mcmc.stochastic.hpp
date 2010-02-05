@@ -23,12 +23,13 @@
 
 namespace CppMC {
 
-  template<typename T>
-  class MCMCStochastic : public MCMCSpecialized<T> {
+  template<typename DataT,
+           template<typename> class ArmaT>
+  class MCMCStochastic : public MCMCSpecialized<DataT,ArmaT> {
   protected:
-    MCMCJumper<T> jumper_;
+    MCMCJumper<DataT,ArmaT> jumper_;
   public:
-    MCMCStochastic(const Mat<T>& shape): MCMCSpecialized<T>(shape), jumper_(MCMCSpecialized<T>::value_) {}
+    MCMCStochastic(const ArmaT<DataT>& shape): MCMCSpecialized<DataT,ArmaT>(shape), jumper_(MCMCSpecialized<DataT,ArmaT>::value_) {}
     void jump_self() {
       jumper_.jump();
     }

@@ -25,15 +25,16 @@
 namespace CppMC {
   using namespace arma;
 
-  template<typename T>
+  template<typename DataT,
+           template<typename> class ArmaT>
   class MCMCSpecialized : public MCMCObject {
   protected:
-    Mat<T> value_;
-    Mat<T> old_value_;
-    std::vector< Mat<T> > history_;
+    ArmaT<DataT> value_;
+    ArmaT<DataT> old_value_;
+    std::vector< ArmaT<DataT> > history_;
   public:
-    MCMCSpecialized(const Mat<T>& shape): MCMCObject(), value_(shape) {}
-    const Mat<T>& exposeValue() const {
+    MCMCSpecialized(const ArmaT<DataT>& shape): MCMCObject(), value_(shape) {}
+    const ArmaT<DataT>& exposeValue() const {
       return value_;
     }
     void preserve_self() {
@@ -45,7 +46,7 @@ namespace CppMC {
     void tally_self() {
       history_.push_back(value_);
     }
-    const std::vector< Mat<T> >& getHistory() const {
+    const std::vector< ArmaT<DataT> >& getHistory() const {
       return history_;
     }
 
@@ -66,13 +67,13 @@ namespace CppMC {
     }
 
     // allow user to subscript this object directly
-    T& operator[](const int i) {
+    DataT& operator[](const int i) {
       return value_(i);
     }
-    T& operator()(const int i, const int j) {
+    DataT& operator()(const int i, const int j) {
       return value_(i,j);
     }
-    void fill(const T fill_value) {
+    void fill(const DataT fill_value) {
       value_.fill(fill_value);
     }
   };
