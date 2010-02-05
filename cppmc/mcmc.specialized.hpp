@@ -19,19 +19,21 @@
 #define MCMC_SPECIALIZED_HPP
 
 #include <vector>
+#include <armadillo>
 #include <cppmc/mcmc.object.hpp>
 
 namespace CppMC {
+  using namespace arma;
 
   template<typename T>
   class MCMCSpecialized : public MCMCObject {
   protected:
-    T value_;
-    T old_value_;
-    std::vector<T> history_;
+    Mat<T> value_;
+    Mat<T> old_value_;
+    std::vector< Mat<T> > history_;
   public:
-    MCMCSpecialized(const T& shape): MCMCObject(), value_(shape) {}
-    const T& exposeValue() const {
+    MCMCSpecialized(const Mat<T>& shape): MCMCObject(), value_(shape) {}
+    const Mat<T>& exposeValue() const {
       return value_;
     }
     void preserve_self() {
@@ -43,8 +45,35 @@ namespace CppMC {
     void tally_self() {
       history_.push_back(value_);
     }
-    const std::vector<T>& getHistory() const {
+    const std::vector< Mat<T> >& getHistory() const {
       return history_;
+    }
+
+    uint nrow() const { return value_.n_rows; }
+    uint ncol() const { return value_.n_cols; }
+    uint size() const { return nrow() * ncol(); }
+
+    void shape(std::vector<uint>& ans) const {
+      ans.push_back(nrow());
+      ans.push_back(ncol());
+    }
+
+    std::vector<uint> shape() const {
+      std::vector<int> ans(2);
+      ans[0] = nrow();
+      ans[1] = ncol();
+      return ans;
+    }
+
+    // allow user to subscript this object directly
+    T& operator[](const int i) {
+      return value_(i);
+    }
+    T& operator()(const int i, const int j) {
+      return value_(i,j);
+    }
+    void fill(const T fill_value) {
+      value_.fill(fill_value);
     }
   };
 } // namespace CppMC

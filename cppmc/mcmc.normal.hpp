@@ -32,10 +32,10 @@ namespace CppMC {
     boost::normal_distribution<double> rng_dist_;
     boost::variate_generator<base_generator_type&, boost::normal_distribution<double> > rng_;
   public:
-    Normal(const double mu, const double standard_deviation, const T shape): MCMCStochastic<T>(shape),
+    Normal(const double mu, const double standard_deviation, const Mat<T> shape): MCMCStochastic<T>(shape),
                                                                              mu_(mu), tau_(MCMCObject::sd_to_tau(standard_deviation)),
                                                                              rng_dist_(mu_, standard_deviation), rng_(MCMCStochastic<T>::generator_, rng_dist_) {
-      for(size_t i = 0; i < nrow(MCMCStochastic<T>::value_) * ncol(MCMCStochastic<T>::value_); i++) {
+      for(size_t i = 0; i < MCMCStochastic<T>::size(); i++) {
 	MCMCStochastic<T>::value_[i] = rng_();
       }
       MCMCStochastic<T>::jumper_.setSD(sd());
@@ -45,7 +45,7 @@ namespace CppMC {
     }
     double calc_logp_self() const {
       double ans(0);
-      for(size_t i = 0; i < nrow(MCMCStochastic<T>::value_) * ncol(MCMCStochastic<T>::value_); i++) {
+      for(size_t i = 0; i < MCMCStochastic<T>::size(); i++) {
 	ans += normal_logp(MCMCStochastic<T>::value_[i], mu_, tau_);
       }
       return ans;

@@ -18,10 +18,13 @@
 #ifndef MCMC_OBJECT_HPP
 #define MCMC_OBJECT_HPP
 
+#include <boost/random.hpp>
+
 // should be settable by the user somewhere...
 typedef boost::minstd_rand base_generator_type;
 
 namespace CppMC {
+  using namespace boost;
 
   const double neg_inf(-std::numeric_limits<double>::infinity());
 
@@ -33,7 +36,7 @@ namespace CppMC {
     double old_logp_;
     std::vector<MCMCObject*> parents_;
   public:
-    MCMCObject(): iteration_(-1), logp_(neg_inf), old_logp_(neg_inf) {}    
+    MCMCObject(): iteration_(-1), logp_(neg_inf), old_logp_(neg_inf) {}
     double logp() const { return logp_self() + logp_parents(); }
     double logp_self() const { return logp_; }
     double static tau_to_sd(const double tau) { return 1/sqrt(tau); }

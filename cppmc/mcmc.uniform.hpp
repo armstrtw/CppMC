@@ -18,7 +18,6 @@
 #ifndef MCMC_UNIFORM_HPP
 #define MCMC_UNIFORM_HPP
 
-#include <iostream>
 #include <cppmc/mcmc.stochastic.hpp>
 
 namespace CppMC {
@@ -31,17 +30,17 @@ namespace CppMC {
     boost::uniform_real<> rng_dist_;
     boost::variate_generator<base_generator_type&, boost::uniform_real<> > rng_;
   public:
-    Uniform(const double lower_bound, const double upper_bound, const T shape): MCMCStochastic<T>(shape),
-										lower_bound_(lower_bound), upper_bound_(upper_bound),
-										rng_dist_(lower_bound_,upper_bound_), rng_(MCMCStochastic<T>::generator_, rng_dist_) {
-      for(size_t i = 0; i < nrow(MCMCStochastic<T>::value_) * ncol(MCMCStochastic<T>::value_); i++) {
+    Uniform(const double lower_bound, const double upper_bound, const Mat<T> shape): MCMCStochastic<T>(shape),
+                                                                                     lower_bound_(lower_bound), upper_bound_(upper_bound),
+                                                                                     rng_dist_(lower_bound_,upper_bound_), rng_(MCMCStochastic<T>::generator_, rng_dist_) {
+      for(size_t i = 0; i < MCMCStochastic<T>::size(); i++) {
 	MCMCStochastic<T>::value_[i] = rng_();
       }
       MCMCStochastic<T>::jumper_.setSD(sd());
     }
     double calc_logp_self() const {
       double ans(0);
-      for(size_t i = 0; i < nrow(MCMCStochastic<T>::value_) * ncol(MCMCStochastic<T>::value_); i++) {
+      for(size_t i = 0; i < MCMCStochastic<T>::size(); i++) {
 	ans += uniform_logp(MCMCStochastic<T>::value_[i], lower_bound_, upper_bound_);
       }
       return ans;

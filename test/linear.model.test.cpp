@@ -4,7 +4,6 @@
 #include <limits>
 #include <cmath>
 
-#include <armadillo>
 #include <boost/random.hpp>
 #include <boost/random/uniform_real.hpp>
 #include <boost/math/distributions/uniform.hpp>
@@ -13,8 +12,6 @@
 #include <cppmc/mcmc.uniform.hpp>
 #include <cppmc/mcmc.normal.likelihood.hpp>
 
-using namespace boost;
-using namespace arma;
 using namespace CppMC;
 using std::vector;
 using std::ofstream;
@@ -23,20 +20,12 @@ using std::endl;
 using boost::math::uniform;
 typedef boost::minstd_rand base_generator_type;
 
-
-inline uint nrow(vec v) { return v.n_rows; }
-inline uint ncol(vec v) { return v.n_cols; }
-inline uint nrow(mat m) { return m.n_rows; }
-inline uint ncol(mat m) { return m.n_cols; }
-//inline uint size(vec v) { return nrow(v) * ncol(v); }
-inline uint size(vec m) { return nrow(m) * ncol(m); }
-
-class EstimatedY : public MCMCDeterministic<mat> {
+class EstimatedY : public MCMCDeterministic<double> {
 private:
   mat& X_;
-  MCMCStochastic<vec>& b_;
+  MCMCStochastic<double>& b_;
 public:
-  EstimatedY(mat& X, MCMCStochastic<vec>& b): MCMCDeterministic<mat>(X * b.exposeValue()), X_(X), b_(b) {
+  EstimatedY(Mat<double>& X, MCMCStochastic<double>& b): MCMCDeterministic<double>(X * b.exposeValue()), X_(X), b_(b) {
     registerParents();
   }
   void registerParents() {
@@ -52,23 +41,23 @@ base_generator_type MCMCJumperBase::generator_;
 base_generator_type MCMCObject::generator_;
 
 int main() {
-  const int N = 1000;
+  const int N = 10;
   mat X = rand<mat>(N,2);
   mat y = rand<mat>(N,1);
 
   // make X col 0 const
   for(int i = 0; i < N; i++) { X(i,0) = 1; }
 
-  vec coefs;
+  mat coefs;
   solve(coefs, X, y);
-  Uniform<vec> B(-1.0,1.0, vec(2));
+  Uniform<double> B(-1.0,1.0, mat(2,1));
   EstimatedY obs_fcst(X, B);
-  NormalLikelihood<mat> likelihood(y, obs_fcst, 100);
+  NormalLikelihood<double> likelihood(y, obs_fcst, 0.01);
   int iterations = 1e5;
   likelihood.sample(iterations, 1e4, 4);
-  const vector<vec>& coefs_hist(B.getHistory());
+  const vector<mat>& coefs_hist(B.getHistory());
 
-  vec avg_coefs(2);
+  mat avg_coefs(2,1);
   avg_coefs.fill(0);
   ofstream outfile;
   outfile.open ("coefs.csv");

@@ -18,8 +18,6 @@
 #ifndef MCMC_NORMAL_LIKELIHOOD_HPP
 #define MCMC_NORMAL_LIKELIHOOD_HPP
 
-#include <iostream>
-#include <armadillo>
 #include <cppmc/mcmc.likelihood.function.hpp>
 #include <cppmc/mcmc.logp.functions.hpp>
 
@@ -30,11 +28,11 @@ class NormalLikelihood : public LikelihoodFunction<T> {
  private:
   const double tau_;
 public:
-  NormalLikelihood(const T& actual_values, MCMCSpecialized<T>& forecast, const double standard_deviation): LikelihoodFunction<T>(actual_values, forecast), tau_(MCMCObject::sd_to_tau(standard_deviation)) {}
+  NormalLikelihood(const Mat<T>& actual_values, MCMCSpecialized<T>& forecast, const double standard_deviation): LikelihoodFunction<T>(actual_values, forecast), tau_(MCMCObject::sd_to_tau(standard_deviation)) {}
 
   double calc_logp_self() const {
     double ans(0);    
-    const T& sample = LikelihoodFunction<T>::forecast_.exposeValue();
+    const Mat<T>& sample = LikelihoodFunction<T>::forecast_.exposeValue();
     for(uint i = 0; i < LikelihoodFunction<T>::actual_values_.n_elem; i++) {
       ans += normal_logp(sample[i], LikelihoodFunction<T>::actual_values_[i], tau_);
     }

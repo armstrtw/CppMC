@@ -26,19 +26,12 @@ using boost::math::uniform;
 typedef boost::minstd_rand base_generator_type;
 
 
-inline uint nrow(vec v) { return v.n_rows; }
-inline uint ncol(vec v) { return v.n_cols; }
-inline uint nrow(mat m) { return m.n_rows; }
-inline uint ncol(mat m) { return m.n_cols; }
-//inline uint size(vec v) { return nrow(v) * ncol(v); }
-inline uint size(vec m) { return nrow(m) * ncol(m); }
-
-class EstimatedY : public MCMCDeterministic<mat> {
+class EstimatedY : public MCMCDeterministic<double> {
 private:
   mat& X_;
-  MCMCStochastic<vec>& b_;
+  MCMCStochastic<double>& b_;
 public:
-  EstimatedY(mat& X, MCMCStochastic<vec>& b): MCMCDeterministic<mat>(X * b.exposeValue()), X_(X), b_(b) {
+  EstimatedY(Mat<double>& X, MCMCStochastic<double>& b): MCMCDeterministic<double>(X * b.exposeValue()), X_(X), b_(b) {
     registerParents();
   }
   void registerParents() {
@@ -64,14 +57,14 @@ int main() {
 
   vec coefs;
   solve(coefs, X, y);
-  Normal<vec> B(0.0, 1.0, vec(2));
+  Normal<double> B(0.0, 1.0, mat(2,1));
   EstimatedY obs_fcst(X, B);
-  NormalLikelihood<mat> likelihood(y, obs_fcst, 1);
+  NormalLikelihood<double> likelihood(y, obs_fcst, 1);
   int iterations = 1e5;
   likelihood.sample(iterations, 1e2, 4);
-  const vector<vec>& coefs_hist(B.getHistory());
+  const vector<mat>& coefs_hist(B.getHistory());
 
-  vec avg_coefs(2);
+  mat avg_coefs(2,1);
   avg_coefs.fill(0);
   ofstream outfile;
   outfile.open ("coefs.csv");

@@ -31,15 +31,15 @@ namespace CppMC {
   template<typename T>
   class MCMCJumper : public MCMCJumperBase {
   private:
-    T& value_;
-    T sd_;
+    Mat<T>& value_;
+    Mat<T> sd_;
     double scale_;
   public:
-    MCMCJumper(T& value): value_(value), sd_(value), scale_(1.0) {
+    MCMCJumper(Mat<T>& value): value_(value), sd_(value), scale_(1.0) {
       sd_.fill(1.0);
     }
     void setSD(const double sd) {
-      for(size_t i = 0; i < ncol(sd_) * nrow(sd_); i++) {
+      for(size_t i = 0; i < sd_.n_elem; i++) {
 	sd_[i] = sd;
       }
     }
@@ -47,7 +47,7 @@ namespace CppMC {
       scale_ = scale;
     }
     void jump() {
-      for(size_t i = 0; i < nrow(value_) * ncol(value_); i++) {
+      for(size_t i = 0; i < value_.n_elem; i++) {
 	value_[i] += scale_ * sd_[i] * rng_();
       }
     }
