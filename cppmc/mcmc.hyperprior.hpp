@@ -22,13 +22,25 @@
 
 namespace CppMC {
 
-  template<typename T>
-  class HyperPrior : public MCMCSpecialized<DataT> {
+  template<typename DataT,
+           template<typename> class ArmaT>
+  class HyperPrior : public MCMCSpecialized<DataT,ArmaT> {
   public:
-    HyperPrior(const T& value) : MCMCSpecialized<DataT>(), MCMCSpecialized<DataT>::value_(value) {};
-    double logp() const { return static_cast<double>(0); }
-    void tally() {}
-    void tally_parents() {}
+
+    // init w/ existing armadillo object
+    HyperPrior(const ArmaT<DataT>& shape) : MCMCSpecialized<DataT,ArmaT>(shape) {};
+
+    // init w/ scalar (assumes vec is ArmaT, b/c mat can't be initialized w/ 'x(1)')
+    HyperPrior(const DataT value) : MCMCSpecialized<DataT,ArmaT>(ArmaT<DataT>(1)) {
+      MCMCSpecialized<DataT,ArmaT>::value_[0] = value;
+    };
+    double calc_logp_self() const { return static_cast<double>(0); }    
+    void registerParents() {}
+    void jump_self() {}
+    void preserve_self() {}
+    void revert_self() {}
+    void tally_self() {}
+    void tune_self(const double acceptance_rate) {}
   };
 } // namespace CppMC
 #endif // MCMC_HYPERPRIOR_HPP

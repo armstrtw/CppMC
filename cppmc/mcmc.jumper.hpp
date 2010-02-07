@@ -39,14 +39,8 @@ namespace CppMC {
     MCMCJumper(ArmaT<DataT>& value): value_(value), sd_(value), scale_(1.0) {
       sd_.fill(1.0);
     }
-    void setSD(const double sd) {
-      for(size_t i = 0; i < sd_.n_elem; i++) {
-	sd_[i] = sd;
-      }
-    }
-    void setScale(const double scale) {
-      scale_ = scale;
-    }
+    void setSD(const ArmaT<DataT> sd) { sd_ = sd; }
+    void setScale(const double scale) { scale_ = scale; }
     void jump() {
       for(size_t i = 0; i < value_.n_elem; i++) {
 	value_[i] += scale_ * sd_[i] * rng_();
