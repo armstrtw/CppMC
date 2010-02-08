@@ -48,6 +48,7 @@ int main() {
   EstimatedY obs_fcst(X, B);
   NormalLikelihood<Mat> likelihood(y, obs_fcst, 1);
   int iterations = 1e5;
+  likelihood.print();
   likelihood.sample(iterations, 1e4, 1);
   const vector<vec>& coefs_hist(B.getHistory());
 

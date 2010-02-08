@@ -73,6 +73,16 @@ namespace CppMC {
       tune_parents(acceptance_rate);
     }
 
+    void print() {
+      print_self();
+
+      // print parents
+      for(std::vector<MCMCObject*>::iterator iter = parents_.begin(); iter!=parents_.end(); iter++) {
+	(*iter)->print();
+      }
+    }
+
+
     // idea is to provide all the parent methods as virtuals
     // so that child classes can override and not use the vector iterators
     // b/c each child will already know who its parents are
@@ -117,6 +127,7 @@ namespace CppMC {
     virtual void preserve_self() = 0;       // in mcmc.specialized
     virtual void revert_self() = 0;       // in mcmc.specialized
     virtual void tally_self() = 0;        // in mcmc.specialized
+    virtual void print_self() = 0;        // in mcmc.specialized
     virtual void tune_self(const double acceptance_rate) = 0;
   };
 } // namespace CppMC

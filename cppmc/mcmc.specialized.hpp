@@ -19,6 +19,7 @@
 #define MCMC_SPECIALIZED_HPP
 
 #include <vector>
+#include <iostream>
 #include <armadillo>
 #include <cppmc/mcmc.object.hpp>
 
@@ -45,6 +46,9 @@ namespace CppMC {
     }
     void tally_self() {
       history_.push_back(value_);
+    }
+    void print_self() {
+      std::cout << value_ << std::endl;
     }
     const std::vector< ArmaT<DataT> >& getHistory() const {
       return history_;

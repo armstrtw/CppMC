@@ -18,6 +18,7 @@
 #ifndef MCMC_LIKELIHOOD_FUNCTION_HPP
 #define MCMC_LIKELIHOOD_FUNCTION_HPP
 
+#include <iostream>
 #include <cppmc/mcmc.object.hpp>
 #include <cppmc/mcmc.specialized.hpp>
 
@@ -81,6 +82,10 @@ namespace CppMC {
     void revert_self() {}
     void tally_self() {}
     void tune_self(const double acceptance_rate) {}
+    void print_self() {
+      std::cout << "acutal values:" << std::endl << actual_values_;
+      std::cout << "forecast:" << std::endl << forecast_.exposeValue();
+    }
   };
 } // namespace CppMC
 #endif // MCMC_LIKELIHOOD_FUNCTION_HPP
