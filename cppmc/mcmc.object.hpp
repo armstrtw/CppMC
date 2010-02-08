@@ -35,7 +35,9 @@ namespace CppMC {
     double logp_;
     double old_logp_;
     std::vector<MCMCObject*> parents_;
+    std::vector<MCMCObject*> locals_;
   public:
+    ~MCMCObject() { for(size_t i =0; i < locals_.size(); i++) { delete locals_[i]; } }
     MCMCObject(): iteration_(-1), logp_(neg_inf), old_logp_(neg_inf) {}
     double logp() const { return logp_self() + logp_parents(); }
     double logp_self() const { return logp_; }
