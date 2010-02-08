@@ -19,6 +19,7 @@
 #define MCMC_UNIFORM_HPP
 
 #include <cppmc/mcmc.stochastic.hpp>
+#include <cppmc/mcmc.hyperprior.hpp>
 
 namespace CppMC {
 
@@ -34,7 +35,10 @@ namespace CppMC {
     Uniform(MCMCSpecialized<double,Col>& lower_bound, MCMCSpecialized<double,Col>&upper_bound, const ArmaT<double> shape):
       MCMCStochastic<double,ArmaT>(shape),
       lower_bound_(lower_bound), upper_bound_(upper_bound),
-      rng_dist_(lower_bound_,upper_bound_), rng_(MCMCStochastic<double,ArmaT>::generator_, rng_dist_) {
+      // FIXME: we really need a vector of these
+      // one for each lower/upper combo
+      rng_dist_(-1.0,1.0),
+      rng_(MCMCStochastic<double,ArmaT>::generator_, rng_dist_) {
 
       // FIXME: each value needs to use it's own lower/upper
       // set values
@@ -42,6 +46,27 @@ namespace CppMC {
 	MCMCStochastic<double,ArmaT>::value_[i] = rng_();
       }
     }
+
+    // convenience wrapper for imlied hyperpriors
+    Uniform(const double lower_bound, const double upper_bound, const ArmaT<double> shape):
+      MCMCStochastic<double,ArmaT>(shape),
+      lower_bound_(*(new HyperPrior<double,Col>(lower_bound))), upper_bound_(*(new HyperPrior<double,Col>(upper_bound))),
+      // FIXME: we really need a vector of these
+      // one for each lower/upper combo
+      rng_dist_(-1.0,1.0),
+      rng_(MCMCStochastic<double,ArmaT>::generator_, rng_dist_) {
+
+      // have to put the implicit hyperpriors on the locals list so they get deleted
+      MCMCStochastic<double,ArmaT>::locals_.push_back(&lower_bound_);
+      MCMCStochastic<double,ArmaT>::locals_.push_back(&upper_bound_);
+
+      // FIXME: each value needs to use it's own lower/upper
+      // set values
+      for(size_t i = 0; i < MCMCStochastic<double,ArmaT>::size(); i++) {
+	MCMCStochastic<double,ArmaT>::value_[i] = rng_();
+      }
+    }
+
     double calc_logp_self() const {
       double ans(0);
       const uint lower_size = lower_bound_.size();
@@ -53,8 +78,8 @@ namespace CppMC {
     }
 
     void registerParents() {
-      MCMCStochastic<double,ArmaT>::parents_.push_back(lower_bound_);
-      MCMCStochastic<double,ArmaT>::parents_.push_back(upper_bound_);
+      MCMCStochastic<double,ArmaT>::parents_.push_back(&lower_bound_);
+      MCMCStochastic<double,ArmaT>::parents_.push_back(&upper_bound_);
     }
   };
 } // namespace CppMC

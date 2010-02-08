@@ -21,6 +21,7 @@
 #include <boost/random.hpp>
 #include <boost/math/distributions/normal.hpp>
 #include <cppmc/mcmc.stochastic.hpp>
+#include <cppmc/mcmc.hyperprior.hpp>
 
 namespace CppMC {
 
@@ -50,6 +51,30 @@ namespace CppMC {
         }
       }
     }
+
+    // convenience wrapper for imlied hyperpriors
+    Normal(const double mu, const double tau, const ArmaT<double> shape):
+      MCMCStochastic<double,ArmaT>(shape),
+      mu_(*(new HyperPrior<double,Col>(mu))), tau_(*(new HyperPrior<double,Col>(tau))),
+      rng_dist_(0, 1), rng_(MCMCStochastic<double,ArmaT>::generator_, rng_dist_) {
+
+      // have to put the implicit hyperpriors on the locals list so they get deleted
+      MCMCStochastic<double,ArmaT>::locals_.push_back(&mu_);
+      MCMCStochastic<double,ArmaT>::locals_.push_back(&tau_);
+
+      // set values
+      for(size_t i = 0; i < MCMCStochastic<double,ArmaT>::size(); i++) {
+        // should throw exception if sizes are incompatible (or odd)
+        // if mu is scalar, then wrapping is behavior we want
+        const uint mu_size = mu_.size();
+        for(uint row = 0; row < MCMCStochastic<double,ArmaT>::value_.n_rows; row++) {
+          for(uint col = 0; col < MCMCStochastic<double,ArmaT>::value_.n_cols; col++) {
+            MCMCStochastic<double,ArmaT>::value_(row,col) = rng_() + mu_[col % mu_size];
+          }
+        }
+      }
+    }
+
     double calc_logp_self() const {
       double ans(0);
       for(size_t i = 0; i < MCMCStochastic<double,ArmaT>::size(); i++) {
