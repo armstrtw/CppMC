@@ -68,7 +68,7 @@ namespace CppMC {
 
     // allow user to subscript this object directly
     DataT& operator[](const int i) {
-      return value_(i);
+      return value_[i];
     }
     DataT& operator()(const int i, const int j) {
       return value_(i,j);
