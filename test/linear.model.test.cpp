@@ -5,19 +5,13 @@
 #include <cmath>
 
 #include <boost/random.hpp>
-#include <boost/random/uniform_real.hpp>
-#include <boost/math/distributions/uniform.hpp>
-
-#include <cppmc/mcmc.deterministic.hpp>
-#include <cppmc/mcmc.uniform.hpp>
-#include <cppmc/mcmc.normal.likelihood.hpp>
+#include <cppmc/cppmc.hpp>
 
 using namespace CppMC;
 using std::vector;
 using std::ofstream;
 using std::cout;
 using std::endl;
-using boost::math::uniform;
 typedef boost::minstd_rand base_generator_type;
 
 class EstimatedY : public MCMCDeterministic<double,Mat> {
@@ -50,11 +44,11 @@ int main() {
 
   vec coefs;
   solve(coefs, X, y);
-  Uniform<double,Col> B(-1.0,1.0, vec(2));
+  Uniform<Col> B(-1.0, 1.0, vec(2));
   EstimatedY obs_fcst(X, B);
-  NormalLikelihood<double,Mat> likelihood(y, obs_fcst, 0.01);
+  NormalLikelihood<Mat> likelihood(y, obs_fcst, 1);
   int iterations = 1e5;
-  likelihood.sample(iterations, 1e4, 4);
+  likelihood.sample(iterations, 1e4, 1);
   const vector<vec>& coefs_hist(B.getHistory());
 
   vec avg_coefs(2);

@@ -4,16 +4,8 @@
 #include <limits>
 #include <cmath>
 
-#include <armadillo>
-#include <gsl/gsl_rng.h>
-#include <gsl/gsl_randist.h>
 #include <boost/random.hpp>
-#include <boost/random/uniform_real.hpp>
-#include <boost/math/distributions/uniform.hpp>
-
-#include <cppmc/mcmc.deterministic.hpp>
-#include <cppmc/mcmc.normal.hpp>
-#include <cppmc/mcmc.normal.likelihood.hpp>
+#include <cppmc/cppmc.hpp>
 
 using namespace boost;
 using namespace arma;
@@ -22,7 +14,6 @@ using std::vector;
 using std::ofstream;
 using std::cout;
 using std::endl;
-using boost::math::uniform;
 typedef boost::minstd_rand base_generator_type;
 
 class EstimatedY : public MCMCDeterministic<double,Mat> {
@@ -42,7 +33,6 @@ public:
 };
 
 // global rng generators
-// global rng generators
 base_generator_type MCMCObject::generator_;
 base_generator_type MCMCJumperBase::generator_;
 
@@ -56,9 +46,9 @@ int main() {
 
   vec coefs;
   solve(coefs, X, y);
-  Normal<double,Col> B(0.0, 1.0, vec(2));
+  Normal<Col> B(0.0, 1.0, vec(2));
   EstimatedY obs_fcst(X, B);
-  NormalLikelihood<double,Mat> likelihood(y, obs_fcst, 1);
+  NormalLikelihood<Mat> likelihood(y, obs_fcst, 1);
   int iterations = 1e5;
   likelihood.sample(iterations, 1e2, 4);
   const vector<vec>& coefs_hist(B.getHistory());
