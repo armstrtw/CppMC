@@ -24,29 +24,35 @@
 
 namespace CppMC {
 
-  template<typename DataT,
-           template<typename> class ArmaPriorT,
-           template<typename> class ArmaSelfT>
-  class Normal : public MCMCStochastic<DataT,ArmaSelfT> {
+  template<template<typename> class ArmaT>
+  class Normal : public MCMCStochastic<double,ArmaT> {
   private:
-    MCMCSpecialized<DataT,ArmaPriorT>& mu_;
-    MCMCSpecialized<DataT,ArmaPriorT>& tau_;
+    MCMCSpecialized<double,Col>& mu_;
+    MCMCSpecialized<double,Col>& tau_;
 
     boost::normal_distribution<double> rng_dist_;
     boost::variate_generator<base_generator_type&, boost::normal_distribution<double> > rng_;
   public:
-    Normal(MCMCSpecialized<DataT,ArmaPriorT>&mu, MCMCSpecialized<DataT,ArmaPriorT>& standard_deviation, const ArmaSelfT<DataT> shape):
-      MCMCStochastic<DataT,ArmaSelfT>(shape),
-      mu_(mu), tau_(MCMCObject::sd_to_tau(standard_deviation)),
-      rng_dist_(mu_, standard_deviation), rng_(MCMCStochastic<DataT,ArmaSelfT>::generator_, rng_dist_) {
+    Normal(MCMCSpecialized<double,Col>& mu, MCMCSpecialized<double,Col>& tau_, const ArmaT<double> shape):
+      MCMCStochastic<double,ArmaT>(shape),
+      mu_(mu), tau_(tau_),
+      rng_dist_(0, 1), rng_(MCMCStochastic<double,ArmaT>::generator_, rng_dist_) {
 
-      for(size_t i = 0; i < MCMCStochastic<DataT,ArmaSelfT>::size(); i++) {
-	MCMCStochastic<DataT,ArmaSelfT>::value_[i] = rng_();
+      // set values
+      for(size_t i = 0; i < MCMCStochastic<double,ArmaT>::size(); i++) {
+        // should throw exception if sizes are incompatible (or odd)
+        // if mu is scalar, then wrapping is behavior we want
+        const uint mu_size = mu_.size();
+        for(uint row = 0; row < MCMCStochastic<double,ArmaT>::value_.n_rows; row++) {
+          for(uint col = 0; col < MCMCStochastic<double,ArmaT>::value_.n_cols; col++) {
+            MCMCStochastic<double,ArmaT>::value_(row,col) = rng_() + mu_[col % mu_size];
+          }
+        }
       }
-      MCMCStochastic<DataT,ArmaSelfT>::jumper_.setSD(sd());
+      MCMCStochastic<double,ArmaT>::jumper_.setSD(sd());
     }
-    ArmaSelfT<DataT> sd() const {
-      ArmaSelfT<DataT> ans(tau_.nrow(),tau_.ncol());
+    ArmaT<double> sd() const {
+      ArmaT<double> ans(tau_.nrow(),tau_.ncol());
       for(uint i = 0; i < tau_.size(); i++) {
         ans[i] = MCMCObject::tau_to_sd(tau_[i]);
       }
@@ -54,8 +60,10 @@ namespace CppMC {
     }
     double calc_logp_self() const {
       double ans(0);
-      for(size_t i = 0; i < MCMCStochastic<DataT,ArmaSelfT>::size(); i++) {
-	ans += normal_logp(MCMCStochastic<DataT,ArmaSelfT>::value_[i], mu_[i], tau_[i]);
+      for(size_t i = 0; i < MCMCStochastic<double,ArmaT>::size(); i++) {
+        const uint mu_size = mu_.size();
+        const uint tau_size = tau_.size();
+	ans += normal_logp(MCMCStochastic<double,ArmaT>::value_[i], mu_[i % mu_size], tau_[i % tau_size]);
       }
       return ans;
     }
@@ -63,8 +71,8 @@ namespace CppMC {
 
     // need to define when mu and sd are allowed to be MCMC objects
     void registerParents() {
-      MCMCStochastic<DataT,ArmaSelfT>::parents_.push_back(&mu_);
-      MCMCStochastic<DataT,ArmaSelfT>::parents_.push_back(&tau_);
+      MCMCStochastic<double,ArmaT>::parents_.push_back(&mu_);
+      MCMCStochastic<double,ArmaT>::parents_.push_back(&tau_);
     }
   };
 } // namespace CppMC
