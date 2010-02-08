@@ -22,38 +22,39 @@
 
 namespace CppMC {
 
-  template<typename DataT,
-           template<typename> class ArmaT>
-  class Uniform : public MCMCStochastic<DataT,ArmaT> {
+
+  template<template<typename> class ArmaT>
+  class Uniform : public MCMCStochastic<double,ArmaT> {
   private:
-    const double lower_bound_;
-    const double upper_bound_;
+    MCMCSpecialized<double,Col>& lower_bound_;
+    MCMCSpecialized<double,Col>& upper_bound_;
     boost::uniform_real<> rng_dist_;
     boost::variate_generator<base_generator_type&, boost::uniform_real<> > rng_;
   public:
-    Uniform(const double lower_bound, const double upper_bound, const ArmaT<DataT> shape): MCMCStochastic<DataT,ArmaT>(shape),
-                                                                                     lower_bound_(lower_bound), upper_bound_(upper_bound),
-                                                                                     rng_dist_(lower_bound_,upper_bound_), rng_(MCMCStochastic<DataT,ArmaT>::generator_, rng_dist_) {
-      for(size_t i = 0; i < MCMCStochastic<DataT,ArmaT>::size(); i++) {
-	MCMCStochastic<DataT,ArmaT>::value_[i] = rng_();
+    Uniform(MCMCSpecialized<double,Col>& lower_bound, MCMCSpecialized<double,Col>&upper_bound, const ArmaT<double> shape):
+      MCMCStochastic<double,ArmaT>(shape),
+      lower_bound_(lower_bound), upper_bound_(upper_bound),
+      rng_dist_(lower_bound_,upper_bound_), rng_(MCMCStochastic<double,ArmaT>::generator_, rng_dist_) {
+
+      // FIXME: each value needs to use it's own lower/upper
+      // set values
+      for(size_t i = 0; i < MCMCStochastic<double,ArmaT>::size(); i++) {
+	MCMCStochastic<double,ArmaT>::value_[i] = rng_();
       }
-      MCMCStochastic<DataT,ArmaT>::jumper_.setSD(sd());
     }
     double calc_logp_self() const {
       double ans(0);
-      for(size_t i = 0; i < MCMCStochastic<DataT,ArmaT>::size(); i++) {
-	ans += uniform_logp(MCMCStochastic<DataT,ArmaT>::value_[i], lower_bound_, upper_bound_);
+      const uint lower_size = lower_bound_.size();
+      const uint upper_size = upper_bound_.size();
+      for(size_t i = 0; i < MCMCStochastic<double,ArmaT>::size(); i++) {
+	ans += uniform_logp(MCMCStochastic<double,ArmaT>::value_[i], lower_bound_[i % lower_size], upper_bound_[i % upper_size]);
       }
       return ans;
     }
 
     void registerParents() {
-      // only when lower_bound_ and upper_bound_ are declared as MCMCobjects
-      //MCMCStochastic<DataT,ArmaT>::parents_.push_back(lower_bound_);
-      //MCMCStochastic<DataT,ArmaT>::parents_.push_back(upper_bound_);
-    }
-    double sd() const {
-      return (upper_bound_ - lower_bound_)/pow(12,0.5);
+      MCMCStochastic<double,ArmaT>::parents_.push_back(lower_bound_);
+      MCMCStochastic<double,ArmaT>::parents_.push_back(upper_bound_);
     }
   };
 } // namespace CppMC

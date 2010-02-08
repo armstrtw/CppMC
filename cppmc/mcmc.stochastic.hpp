@@ -36,7 +36,6 @@ namespace CppMC {
     void tune_self(const double acceptance_rate) {
       jumper_.tune(acceptance_rate);
     }
-    virtual ArmaT<DataT> sd() const = 0;
   };
 } // namespace CppMC
 #endif // MCMC_STOCHASTIC_HPP

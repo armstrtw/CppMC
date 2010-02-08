@@ -49,14 +49,6 @@ namespace CppMC {
           }
         }
       }
-      MCMCStochastic<double,ArmaT>::jumper_.setSD(sd());
-    }
-    ArmaT<double> sd() const {
-      ArmaT<double> ans(tau_.nrow(),tau_.ncol());
-      for(uint i = 0; i < tau_.size(); i++) {
-        ans[i] = MCMCObject::tau_to_sd(tau_[i]);
-      }
-      return ans;
     }
     double calc_logp_self() const {
       double ans(0);
@@ -67,7 +59,6 @@ namespace CppMC {
       }
       return ans;
     }
-    void tally_parents() {}
 
     // need to define when mu and sd are allowed to be MCMC objects
     void registerParents() {
