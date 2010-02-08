@@ -48,23 +48,12 @@ int main() {
   EstimatedY obs_fcst(X, B);
   NormalLikelihood<Mat> likelihood(y, obs_fcst, 1);
   int iterations = 1e5;
-  likelihood.print();
-  likelihood.sample(iterations, 1e4, 1);
-  const vector<vec>& coefs_hist(B.getHistory());
-
-  vec avg_coefs(2);
-  avg_coefs.fill(0);
-  ofstream outfile;
-  outfile.open ("coefs.csv");
-  for(uint i = 0; i < coefs_hist.size(); i++) {
-    outfile << coefs_hist[i][0] << "," << coefs_hist[i][1] << endl;
-    avg_coefs += coefs_hist[i];
-  }
-  avg_coefs /= coefs_hist.size();
+  //likelihood.print();
+  likelihood.sample(iterations, 1e4, 10);
 
   cout << "iterations: " << iterations << endl;
-  cout << "collected " << coefs_hist.size() << " samples." << endl;
+  cout << "collected " << B.getHistory().size() << " samples." << endl;
   cout << "lm coefs" << endl << coefs << endl;
-  cout << "avg_coefs" << endl << avg_coefs << endl;
+  cout << "avg_coefs" << endl << B.mean() << endl;
   return 1;
 }

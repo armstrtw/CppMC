@@ -59,14 +59,13 @@ namespace CppMC {
     uint size() const { return nrow() * ncol(); }
 
     void shape(std::vector<uint>& ans) const {
-      ans.push_back(nrow());
-      ans.push_back(ncol());
+      if(nrow() > 0) { ans.push_back(nrow()); }
+      if(ncol() > 0) { ans.push_back(ncol()); }
     }
 
     std::vector<uint> shape() const {
-      std::vector<int> ans(2);
-      ans[0] = nrow();
-      ans[1] = ncol();
+      std::vector<uint> ans;
+      shape(ans);
       return ans;
     }
 
@@ -79,6 +78,19 @@ namespace CppMC {
     }
     void fill(const DataT fill_value) {
       value_.fill(fill_value);
+    }
+
+    ArmaT<double> mean() const {
+      //FIXME: this may not work if value_ is not <double>
+      // have to think of some thing better, possibly partial specialization
+      // for Col<> and Mat<>
+      ArmaT<double> ans(value_);
+      ans.fill(0.0);
+      for(size_t i = 0; i < history_.size(); i++) {
+        ans += history_[i];
+      }
+      ans /= static_cast<double>(history_.size());
+      return ans;
     }
   };
 } // namespace CppMC
