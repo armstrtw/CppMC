@@ -88,14 +88,8 @@ int main() {
   NormalLikelihood<Mat> likelihood(y, obs_fcst, 1);
   likelihood.sample(1e5, 1e4, 4);
 
-  const vector<mat>& coefs_hist(B.getHistory());
-  mat avg_coefs(J,NC); avg_coefs.fill(0);
-  for(uint i = 0; i < coefs_hist.size(); i++) {
-    avg_coefs += coefs_hist[i];
-  }
-  avg_coefs /= coefs_hist.size();
-  cout << "collected " << coefs_hist.size() << " samples." << endl;
-  cout << "avg_coefs" << endl << avg_coefs << endl;
+  cout << "collected " << B.getHistory().size() << " samples." << endl;
+  cout << "avg_coefs" << endl << B.mean() << endl;
 
   return 1;
 }
