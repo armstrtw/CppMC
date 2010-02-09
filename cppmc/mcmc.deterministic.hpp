@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>. //
 ///////////////////////////////////////////////////////////////////////////
 
-#ifndef MCMC_SPECIALIZED_OBJECT_HPP
-#define MCMC_SPECIALIZED_OBJECT_HPP
+#ifndef MCMC_DETERMINISTIC_HPP
+#define MCMC_DETERMINISTIC_HPP
 
 #include <cppmc/mcmc.specialized.hpp>
 
@@ -41,4 +41,4 @@ namespace CppMC {
     virtual ArmaT<DataT> eval() const = 0;
   };
 } // namespace CppMC
-#endif // MCMC_SPECIALIZED_OBJECT_HPP
+#endif // MCMC_DETERMINISTIC_HPP
