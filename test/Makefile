@@ -7,7 +7,7 @@ LIBS = $(ARMADILLO_LIBS)
 all: linear.model.test linear.model.benchmark linear.model.normal.coefs.test varying.coefs.test
 
 clean:
-	rm linear.model.test linear.model.benchmark linear.model.normal.coefs.test
+	rm -f linear.model.test linear.model.benchmark linear.model.normal.coefs.test varying.coefs.test
 
 linear.model.test: linear.model.test.cpp
 	$(CC) $(CPPFLAGS) $(LIBS) linear.model.test.cpp -o linear.model.test
