@@ -32,7 +32,7 @@ namespace CppMC {
     MCMCSpecialized<double,Col>& tau_;
 
     boost::normal_distribution<double> rng_dist_;
-    boost::variate_generator<base_generator_type&, boost::normal_distribution<double> > rng_;
+    boost::variate_generator<CppMCGeneratorT&, boost::normal_distribution<double> > rng_;
   public:
     Normal(MCMCSpecialized<double,Col>& mu, MCMCSpecialized<double,Col>& tau_, const ArmaT<double> shape):
       MCMCStochastic<double,ArmaT>(shape),

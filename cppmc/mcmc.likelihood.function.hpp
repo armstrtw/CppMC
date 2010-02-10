@@ -29,9 +29,9 @@ namespace CppMC {
   class LikelihoodFunction : public MCMCObject {
   private:
     // for acceptace test
-    base_generator_type generator_;
+    CppMCGeneratorT generator_;
     boost::uniform_real<> uni_dist_;
-    boost::variate_generator<base_generator_type&, boost::uniform_real<> > uni_rng_;
+    boost::variate_generator<CppMCGeneratorT&, boost::uniform_real<> > uni_rng_;
   protected:
     const ArmaT<DataT>& actual_values_;
     MCMCSpecialized<DataT,ArmaT>& forecast_;

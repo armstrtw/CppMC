@@ -23,11 +23,13 @@
 namespace CppMC {
   using namespace boost;
 
+  // hardcoded for now
+  typedef minstd_rand CppMCGeneratorT;
   const double neg_inf(-std::numeric_limits<double>::infinity());
 
   class MCMCObject {
   protected:
-    static base_generator_type generator_;
+    static CppMCGeneratorT generator_;
     int iteration_;
     double logp_;
     double old_logp_;

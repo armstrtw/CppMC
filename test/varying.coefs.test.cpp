@@ -1,8 +1,6 @@
 #include <iostream>
 #include <vector>
 #include <boost/random.hpp>
-
-typedef boost::minstd_rand base_generator_type;
 #include <cppmc/cppmc.hpp>
 
 using namespace boost;
@@ -42,7 +40,7 @@ public:
 };
 
 // global rng generators
-base_generator_type MCMCObject::generator_;
+CppMCGeneratorT MCMCObject::generator_;
 
 int main() {
   const uint NR = 1000;

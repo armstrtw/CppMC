@@ -21,11 +21,11 @@
 namespace CppMC {
   class MCMCJumperBase {
   protected:
-    base_generator_type& generator_;
+    CppMCGeneratorT& generator_;
     boost::normal_distribution<double> rng_dist_;
-    boost::variate_generator<base_generator_type&, boost::normal_distribution<double> > rng_;
+    boost::variate_generator<CppMCGeneratorT&, boost::normal_distribution<double> > rng_;
   public:
-    MCMCJumperBase(base_generator_type& generator): generator_(generator), rng_dist_(0, 1.0), rng_(generator_, rng_dist_) {}
+    MCMCJumperBase(CppMCGeneratorT& generator): generator_(generator), rng_dist_(0, 1.0), rng_(generator_, rng_dist_) {}
   };
 
   template<typename DataT,
@@ -36,7 +36,7 @@ namespace CppMC {
     ArmaT<DataT> sd_;
     double scale_;
   public:
-    MCMCJumper(ArmaT<DataT>& value, base_generator_type& generator):
+    MCMCJumper(ArmaT<DataT>& value, CppMCGeneratorT& generator):
       MCMCJumperBase(generator), value_(value), sd_(value), scale_(1.0) {
       sd_.fill(1.0);
     }

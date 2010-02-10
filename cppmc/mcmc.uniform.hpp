@@ -30,7 +30,7 @@ namespace CppMC {
     MCMCSpecialized<double,Col>& lower_bound_;
     MCMCSpecialized<double,Col>& upper_bound_;
     boost::uniform_real<> rng_dist_;
-    boost::variate_generator<base_generator_type&, boost::uniform_real<> > rng_;
+    boost::variate_generator<CppMCGeneratorT&, boost::uniform_real<> > rng_;
   public:
     Uniform(MCMCSpecialized<double,Col>& lower_bound, MCMCSpecialized<double,Col>&upper_bound, const ArmaT<double> shape):
       MCMCStochastic<double,ArmaT>(shape),
