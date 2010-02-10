@@ -38,10 +38,12 @@ namespace CppMC {
   public:
     ~MCMCObject() { for(size_t i =0; i < locals_.size(); i++) { delete locals_[i]; } }
     MCMCObject(): iteration_(-1), logp_(neg_inf), old_logp_(neg_inf) {}
+    static void seedRNG(unsigned int s) { generator_.seed(s); }
+    static void burnRNG(unsigned int n) { for(unsigned int i = 0; i < n; i++) { generator_(); } }
     double logp() const { return logp_self() + logp_parents(); }
     double logp_self() const { return logp_; }
-    double static tau_to_sd(const double tau) { return 1/sqrt(tau); }
-    double static sd_to_tau(const double sd) { return 1/pow(sd,2.0); }
+    static double tau_to_sd(const double tau) { return 1/sqrt(tau); }
+    static double sd_to_tau(const double sd) { return 1/pow(sd,2.0); }
     void jump(const int current_iteration) {
       // only jump if we hevn't already jumped yet
       if(iteration_ == current_iteration) {
