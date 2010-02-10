@@ -20,7 +20,7 @@ private:
   mat row_sum_permutation_;
 public:
   EstimatedY(Mat<double>& X, MCMCStochastic<double,Mat>& B, ivec& groups):
-    MCMCDeterministic<double,Mat>(mat(X.n_rows,X.n_cols)), X_(X), B_(B), B_full_rank_(X_.n_rows,X.n_cols),
+    MCMCDeterministic<double,Mat>(mat(X.n_rows,1)), X_(X), B_(B), B_full_rank_(X_.n_rows,X.n_cols),
     permutation_matrix_(X_.n_rows,B.nrow()) {
     registerParents();
     permutation_matrix_.fill(0.0);
@@ -28,6 +28,7 @@ public:
     for(uint i = 0; i < groups.n_elem; i++) {
       permutation_matrix_(i,groups[i]) = 1.0;
     }
+    MCMCDeterministic<double,Mat>::value_ = eval();
   }
   void registerParents() {
     parents_.push_back(&B_);
@@ -80,6 +81,7 @@ int main() {
   
   EstimatedY obs_fcst(X, B, groups);
   NormalLikelihood<Mat> likelihood(y, obs_fcst, 1);
+  likelihood.print();
   likelihood.sample(1e5, 1e4, 4);
 
   cout << "collected " << B.getHistory().size() << " samples." << endl;
