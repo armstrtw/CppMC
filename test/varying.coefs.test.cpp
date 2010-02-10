@@ -1,9 +1,8 @@
 #include <iostream>
 #include <vector>
-#include <limits>
-#include <cmath>
+#include <boost/random.hpp>
 
-#include <boost/random/uniform_real.hpp>
+typedef boost::minstd_rand base_generator_type;
 #include <cppmc/cppmc.hpp>
 
 using namespace boost;
@@ -13,8 +12,6 @@ using std::vector;
 using std::ofstream;
 using std::cout;
 using std::endl;
-typedef boost::minstd_rand base_generator_type;
-
 
 class EstimatedY : public MCMCDeterministic<double,Mat> {
 private:
@@ -45,7 +42,6 @@ public:
 };
 
 // global rng generators
-base_generator_type MCMCJumperBase::generator_;
 base_generator_type MCMCObject::generator_;
 
 int main() {

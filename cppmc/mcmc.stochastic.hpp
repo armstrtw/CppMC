@@ -29,7 +29,9 @@ namespace CppMC {
   protected:
     MCMCJumper<DataT,ArmaT> jumper_;
   public:
-    MCMCStochastic(const ArmaT<DataT>& shape): MCMCSpecialized<DataT,ArmaT>(shape), jumper_(MCMCSpecialized<DataT,ArmaT>::value_) {}
+    MCMCStochastic(const ArmaT<DataT>& shape):
+      MCMCSpecialized<DataT,ArmaT>(shape),
+      jumper_(MCMCSpecialized<DataT,ArmaT>::value_,MCMCSpecialized<DataT,ArmaT>::generator_) {}
     void jump_self() {
       jumper_.jump();
     }

@@ -20,9 +20,6 @@
 
 #include <boost/random.hpp>
 
-// should be settable by the user somewhere...
-typedef boost::minstd_rand base_generator_type;
-
 namespace CppMC {
   using namespace boost;
 
