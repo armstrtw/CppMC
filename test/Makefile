@@ -1,7 +1,7 @@
 
 CC = g++
 CPPFLAGS = -I.. -Wall -g
-ARMADILLO_LIBS = -llapack
+ARMADILLO_LIBS = -llapack-3
 LIBS = $(ARMADILLO_LIBS)
 
 all: linear.model.test linear.model.benchmark linear.model.normal.coefs.test varying.coefs.test

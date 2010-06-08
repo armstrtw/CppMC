@@ -69,11 +69,6 @@ namespace CppMC {
       tally_parents();
     }
 
-    void tune(const double acceptance_rate) {
-      tune_self(acceptance_rate);
-      tune_parents(acceptance_rate);
-    }
-
     void print() {
       print_self();
 
@@ -115,12 +110,6 @@ namespace CppMC {
       }
     }
 
-    virtual void tune_parents(const double acceptance_rate) {
-      for(std::vector<MCMCObject*>::iterator iter = parents_.begin(); iter!=parents_.end(); iter++) {
-	(*iter)->tune(acceptance_rate);
-      }
-    }
-
     // pure virtuals
     virtual void registerParents() = 0; // user must provide this function to make object aware of parents
     virtual double calc_logp_self() const = 0;  // must be implemented for each specific distribution or likelihood
@@ -129,7 +118,6 @@ namespace CppMC {
     virtual void revert_self() = 0;       // in mcmc.specialized
     virtual void tally_self() = 0;        // in mcmc.specialized
     virtual void print_self() = 0;        // in mcmc.specialized
-    virtual void tune_self(const double acceptance_rate) = 0;
   };
 } // namespace CppMC
 #endif // MCMC_OBJECT_HPP

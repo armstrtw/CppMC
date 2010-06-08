@@ -54,18 +54,6 @@ namespace CppMC {
 	} else {
 	  accepted+=1;
 	}
-
-	// tune every 50 during burn
-	if(i % 50 == 0 && i < burn) {
-	  tune(accepted/(accepted + rejected));
-	  accepted = 0;
-	  rejected = 0;
-	}
-
-	// tune every 1000 during actual
-	if(i % 1000 == 0) {
-	  tune(accepted/(accepted + rejected));
-	}
 	if(i > burn && i % thin == 0) {
 	  tally();
 	}

@@ -47,22 +47,6 @@ namespace CppMC {
 	value_[i] += scale_ * sd_[i] * rng_();
       }
     }
-    void tune(const double acceptance_rate) {
-      //cout << "acceptance_rate: " << acceptance_rate << endl;
-      if(acceptance_rate < .001) {
-	scale_ *= .1;
-      } else if(acceptance_rate < .05) {
-	scale_ *= .5;
-      } else if(acceptance_rate < .2) {
-	scale_ *= .9;
-      } else if(acceptance_rate > .95) {
-	scale_ *= 10;
-      } else if(acceptance_rate > .75) {
-	scale_ *= 2;
-      } else if(acceptance_rate > .5) {
-	scale_ *= 1.1;
-      }
-    }
   };
 } // namespace
 #endif // MCMC_JUMPER_HPP

@@ -35,9 +35,6 @@ namespace CppMC {
     void jump_self() {
       jumper_.jump();
     }
-    void tune_self(const double acceptance_rate) {
-      jumper_.tune(acceptance_rate);
-    }
   };
 } // namespace CppMC
 #endif // MCMC_STOCHASTIC_HPP
