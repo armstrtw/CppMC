@@ -27,13 +27,13 @@ namespace CppMC {
   template<typename T>
   inline
   double discrete_uniform_logp(const T x, const T lower, const T upper) {
-      return (x < lower || x > upper) ? neg_inf : -log(upper - lower + 1.0);
+      return (x < lower || x > upper) ? -std::numeric_limits<double>::infinity() : -log(upper - lower + 1.0);
   }
 
   template<typename T>
   inline
   double uniform_logp(const T x, const T lower, const T upper) {
-      return (x < lower || x > upper) ? neg_inf : -log(upper - lower);
+      return (x < lower || x > upper) ? -std::numeric_limits<double>::infinity() : -log(upper - lower);
   }
   template<typename T>
   inline
@@ -51,7 +51,7 @@ namespace CppMC {
   template<typename T>
   double poisson_logp(const T x, const T mu) {
     if(x < 0 || mu < 0) {
-      return neg_inf;
+      return -std::numeric_limits<double>::infinity();
     }
     return x * log(mu) - mu - factln(x);
   }
@@ -59,7 +59,7 @@ namespace CppMC {
   template<typename T>
   double truncated_poisson_logp(const T x, const T mu, const T k) {
     if(x < 0 || mu < 0 || k < 0) {
-      return neg_inf;
+      return -std::numeric_limits<double>::infinity();
     }
     double sumx = x * log(mu) - mu;
     double sumfact = factln(x);
@@ -72,7 +72,7 @@ namespace CppMC {
   template<typename T>
   double student_t_logp(const T x, const T nu) {
     if(nu <= 0) {
-      return neg_inf;
+      return -std::numeric_limits<double>::infinity();
     }
     return gammln((nu+1.0)/2.0) - 0.5*log(nu * arma::math::pi()) - gammln(nu/2.0) - (nu+1)/2 * dog(1 + pow(x,2)/nu);
   }
@@ -80,7 +80,7 @@ namespace CppMC {
   //SUBROUTINE multinomial(x,n,p,nx,nn,np,k,like)
   template<typename T>
   double multinomial_logp(x,n,p,k) {
-      return neg_inf;
+      return -std::numeric_limits<double>::infinity();
   }
   */
 } // namespace CppMC

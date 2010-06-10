@@ -22,7 +22,6 @@ public:
   EstimatedY(Mat<double>& X, MCMCStochastic<double,Mat>& B, ivec& groups):
     MCMCDeterministic<double,Mat>(mat(X.n_rows,1)), X_(X), B_(B), B_full_rank_(X_.n_rows,X.n_cols),
     permutation_matrix_(X_.n_rows,B.nrow()) {
-    registerParents();
     permutation_matrix_.fill(0.0);
 
     for(uint i = 0; i < groups.n_elem; i++) {
@@ -30,11 +29,11 @@ public:
     }
     MCMCDeterministic<double,Mat>::value_ = eval();
   }
-  void registerParents() {
-    parents_.push_back(&B_);
+  void getParents(std::vector<MCMCObject*>& parents) const {
+    parents.push_back(&B_);
   }
   Mat<double> eval() const {
-    const mat& B = B_.exposeValue();
+    const mat& B = B_();
     B_full_rank_ = permutation_matrix_ * B;
     return sum(X_ % B_full_rank_,1);
   }
@@ -75,14 +74,12 @@ int main() {
   vec coefs;
   solve(coefs, X, y);
 
-  Normal<Col> mu_b(0.0, 1.0, vec(NC));
-  Normal<Col> sd_b(1.0, 1.0, vec(NC));
-  Normal<Mat> B(mu_b, sd_b, mat(J,NC));
+  Normal<Mat> B(0.0, 0.0001, rand<mat>(J,NC));
   
   EstimatedY obs_fcst(X, B, groups);
-  NormalLikelihood<Mat> likelihood(y, obs_fcst, 1);
+  NormalLikelihood<Mat> likelihood(y, obs_fcst, 1.0);
   likelihood.print();
-  likelihood.sample(1e5, 1e4, 4);
+  likelihood.sample(1e5, 1e4, 10);
 
   cout << "collected " << B.getHistory().size() << " samples." << endl;
   cout << "avg_coefs" << endl << B.mean() << endl;

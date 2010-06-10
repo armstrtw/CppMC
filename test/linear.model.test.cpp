@@ -15,14 +15,17 @@ private:
   mat& X_;
   MCMCStochastic<double,Col>& b_;
 public:
-  EstimatedY(Mat<double>& X, MCMCStochastic<double,Col>& b): MCMCDeterministic<double,Mat>(X * b.exposeValue()), X_(X), b_(b) {
-    registerParents();
+  EstimatedY(Mat<double>& X, MCMCStochastic<double,Col>& b): MCMCDeterministic<double,Mat>(X * b()), X_(X), b_(b)
+  {
+    //cout << "b_.shape()" << b_.nrow() << " " << b_.ncol() << endl;
+    //cout << "X_.shape()" << X_.n_rows << " " << X_.n_cols << endl;
   }
-  void registerParents() {
-    parents_.push_back(&b_);
+  void getParents(std::vector<MCMCObject*>& parents) const {
+    parents.push_back(&b_);
   }
   Mat<double> eval() const {
-    return X_ * b_.exposeValue();
+    //cout << b_() << endl;
+    return X_ * b_();
   }
 };
 
@@ -30,7 +33,7 @@ public:
 CppMCGeneratorT MCMCObject::generator_;
 
 int main() {
-  const int N = 1000;
+  const int N = 100;
   mat X = rand<mat>(N,2);
   mat y = rand<mat>(N,1);
 
@@ -39,11 +42,15 @@ int main() {
 
   vec coefs;
   solve(coefs, X, y);
-  Uniform<Col> B(-1.0, 1.0, vec(2));
+  Uniform<Col> B(-100.0, 100.0, rand<vec>(2));
   EstimatedY obs_fcst(X, B);
-  NormalLikelihood<Mat> likelihood(y, obs_fcst, 1);
+  NormalLikelihood<Mat> likelihood(y, obs_fcst, 1.0);
+
+  cout << "B" << endl; B.print();
+  cout << "obs_fcst" << endl << obs_fcst.eval() << endl;
+  cout << "likelihood"; likelihood.print();
+
   int iterations = 1e5;
-  //likelihood.print();
   likelihood.sample(iterations, 1e4, 10);
 
   cout << "iterations: " << iterations << endl;

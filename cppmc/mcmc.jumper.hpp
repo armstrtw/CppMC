@@ -33,18 +33,14 @@ namespace CppMC {
   class MCMCJumper : public MCMCJumperBase {
   private:
     ArmaT<DataT>& value_;
-    ArmaT<DataT> sd_;
     double scale_;
   public:
     MCMCJumper(ArmaT<DataT>& value, CppMCGeneratorT& generator):
-      MCMCJumperBase(generator), value_(value), sd_(value), scale_(1.0) {
-      sd_.fill(1.0);
-    }
-    void setSD(const ArmaT<DataT> sd) { sd_ = sd; }
+      MCMCJumperBase(generator), value_(value), scale_(1.0) {}
     void setScale(const double scale) { scale_ = scale; }
     void jump() {
       for(size_t i = 0; i < value_.n_elem; i++) {
-	value_[i] += scale_ * sd_[i] * rng_();
+	value_[i] += scale_ * rng_();
       }
     }
   };

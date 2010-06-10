@@ -17,14 +17,13 @@ private:
   mat& X_;
   MCMCStochastic<double,Col>& b_;
 public:
-  EstimatedY(Mat<double>& X, MCMCStochastic<double,Col>& b): MCMCDeterministic<double,Mat>(X * b.exposeValue()), X_(X), b_(b) {
-    registerParents();
-  }
-  void registerParents() {
-    parents_.push_back(&b_);
+  EstimatedY(Mat<double>& X, MCMCStochastic<double,Col>& b): MCMCDeterministic<double,Mat>(X * b()), X_(X), b_(b)
+  {}
+  void getParents(std::vector<MCMCObject*>& parents) const {
+    parents.push_back(&b_);
   }
   Mat<double> eval() const {
-    return X_ * b_.exposeValue();
+    return X_ * b_();
   }
 };
 
@@ -37,9 +36,9 @@ int main() {
   mat X = rand<mat>(NR,NC);
   mat y = rand<mat>(NR,1);
 
-  Uniform<Col> B(-1.0,1.0, vec(NC));
+  Uniform<Col> B(-100.0,100.0, rand<vec>(NC));
   EstimatedY obs_fcst(X, B);
-  NormalLikelihood<Mat> likelihood(y, obs_fcst, 100);
+  NormalLikelihood<Mat> likelihood(y, obs_fcst, 1.0);
   int iterations = 1e5;
   likelihood.sample(iterations, 1e2, 4);
   return 1;

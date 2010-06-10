@@ -29,45 +29,23 @@ namespace CppMC {
   private:
     MCMCSpecialized<double,Col>& lower_bound_;
     MCMCSpecialized<double,Col>& upper_bound_;
-    boost::uniform_real<> rng_dist_;
-    boost::variate_generator<CppMCGeneratorT&, boost::uniform_real<> > rng_;
   public:
     Uniform(MCMCSpecialized<double,Col>& lower_bound, MCMCSpecialized<double,Col>&upper_bound, const ArmaT<double> shape):
       MCMCStochastic<double,ArmaT>(shape),
-      lower_bound_(lower_bound), upper_bound_(upper_bound),
-      // FIXME: we really need a vector of these
-      // one for each lower/upper combo
-      rng_dist_(-1.0,1.0),
-      rng_(MCMCStochastic<double,ArmaT>::generator_, rng_dist_) {
-
-      // FIXME: each value needs to use it's own lower/upper
-      // set values
-      for(size_t i = 0; i < MCMCStochastic<double,ArmaT>::size(); i++) {
-	MCMCStochastic<double,ArmaT>::value_[i] = rng_();
-      }
-    }
+      lower_bound_(lower_bound), upper_bound_(upper_bound)
+    {}
 
     // convenience wrapper for imlied hyperpriors
     Uniform(const double lower_bound, const double upper_bound, const ArmaT<double> shape):
       MCMCStochastic<double,ArmaT>(shape),
-      lower_bound_(*(new HyperPrior<double,Col>(lower_bound))), upper_bound_(*(new HyperPrior<double,Col>(upper_bound))),
-      // FIXME: we really need a vector of these
-      // one for each lower/upper combo
-      rng_dist_(-1.0,1.0),
-      rng_(MCMCStochastic<double,ArmaT>::generator_, rng_dist_) {
-
+      lower_bound_(*(new HyperPrior<double,Col>(lower_bound))), upper_bound_(*(new HyperPrior<double,Col>(upper_bound)))
+    {
       // have to put the implicit hyperpriors on the locals list so they get deleted
       MCMCStochastic<double,ArmaT>::locals_.push_back(&lower_bound_);
       MCMCStochastic<double,ArmaT>::locals_.push_back(&upper_bound_);
-
-      // FIXME: each value needs to use it's own lower/upper
-      // set values
-      for(size_t i = 0; i < MCMCStochastic<double,ArmaT>::size(); i++) {
-	MCMCStochastic<double,ArmaT>::value_[i] = rng_();
-      }
     }
 
-    double calc_logp_self() const {
+    double logp() const {
       double ans(0);
       const uint lower_size = lower_bound_.size();
       const uint upper_size = upper_bound_.size();
@@ -77,9 +55,20 @@ namespace CppMC {
       return ans;
     }
 
-    void registerParents() {
-      MCMCStochastic<double,ArmaT>::parents_.push_back(&lower_bound_);
-      MCMCStochastic<double,ArmaT>::parents_.push_back(&upper_bound_);
+    void getParents(std::vector<MCMCObject*>& parents) const {
+      parents.push_back(&lower_bound_);
+      parents.push_back(&upper_bound_);
+    }
+
+    // specialized jump for uniform
+    void jump() { 
+      MCMCStochastic<double,ArmaT>::jumper_.jump();
+
+      // neg inf jump, redo immediately
+      while(logp() == -std::numeric_limits<double>::infinity()) {
+        MCMCStochastic<double,ArmaT>::revert();
+        MCMCStochastic<double,ArmaT>::jumper_.jump();
+      }
     }
   };
 } // namespace CppMC

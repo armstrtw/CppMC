@@ -31,51 +31,22 @@ namespace CppMC {
     MCMCSpecialized<double,Col>& mu_;
     MCMCSpecialized<double,Col>& tau_;
 
-    boost::normal_distribution<double> rng_dist_;
-    boost::variate_generator<CppMCGeneratorT&, boost::normal_distribution<double> > rng_;
   public:
     Normal(MCMCSpecialized<double,Col>& mu, MCMCSpecialized<double,Col>& tau_, const ArmaT<double> shape):
       MCMCStochastic<double,ArmaT>(shape),
-      mu_(mu), tau_(tau_),
-      rng_dist_(0, 1), rng_(MCMCStochastic<double,ArmaT>::generator_, rng_dist_) {
-
-      // set values
-      for(size_t i = 0; i < MCMCStochastic<double,ArmaT>::size(); i++) {
-        // should throw exception if sizes are incompatible (or odd)
-        // if mu is scalar, then wrapping is behavior we want
-        const uint mu_size = mu_.size();
-        for(uint row = 0; row < MCMCStochastic<double,ArmaT>::value_.n_rows; row++) {
-          for(uint col = 0; col < MCMCStochastic<double,ArmaT>::value_.n_cols; col++) {
-            MCMCStochastic<double,ArmaT>::value_(row,col) = rng_() + mu_[col % mu_size];
-          }
-        }
-      }
-    }
+      mu_(mu), tau_(tau_)
+      {}
 
     // convenience wrapper for imlied hyperpriors
     Normal(const double mu, const double tau, const ArmaT<double> shape):
       MCMCStochastic<double,ArmaT>(shape),
-      mu_(*(new HyperPrior<double,Col>(mu))), tau_(*(new HyperPrior<double,Col>(tau))),
-      rng_dist_(0, 1), rng_(MCMCStochastic<double,ArmaT>::generator_, rng_dist_) {
-
+      mu_(*(new HyperPrior<double,Col>(mu))), tau_(*(new HyperPrior<double,Col>(tau))) {
       // have to put the implicit hyperpriors on the locals list so they get deleted
       MCMCStochastic<double,ArmaT>::locals_.push_back(&mu_);
       MCMCStochastic<double,ArmaT>::locals_.push_back(&tau_);
-
-      // set values
-      for(size_t i = 0; i < MCMCStochastic<double,ArmaT>::size(); i++) {
-        // should throw exception if sizes are incompatible (or odd)
-        // if mu is scalar, then wrapping is behavior we want
-        const uint mu_size = mu_.size();
-        for(uint row = 0; row < MCMCStochastic<double,ArmaT>::value_.n_rows; row++) {
-          for(uint col = 0; col < MCMCStochastic<double,ArmaT>::value_.n_cols; col++) {
-            MCMCStochastic<double,ArmaT>::value_(row,col) = rng_() + mu_[col % mu_size];
-          }
-        }
-      }
     }
 
-    double calc_logp_self() const {
+    double logp() const {
       double ans(0);
       for(size_t i = 0; i < MCMCStochastic<double,ArmaT>::size(); i++) {
         const uint mu_size = mu_.size();
@@ -85,10 +56,9 @@ namespace CppMC {
       return ans;
     }
 
-    // need to define when mu and sd are allowed to be MCMC objects
-    void registerParents() {
-      MCMCStochastic<double,ArmaT>::parents_.push_back(&mu_);
-      MCMCStochastic<double,ArmaT>::parents_.push_back(&tau_);
+    void getParents(std::vector<MCMCObject*>& parents) const {
+      parents.push_back(&mu_);
+      parents.push_back(&tau_);
     }
   };
 } // namespace CppMC

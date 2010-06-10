@@ -30,13 +30,19 @@ namespace CppMC {
   public:
     NormalLikelihood(const ArmaT<double>& actual_values, MCMCSpecialized<double,ArmaT>& forecast, const double tau): LikelihoodFunction<double,ArmaT>(actual_values, forecast), tau_(tau) {}
 
-    double calc_logp_self() const {
+    double logp() const {
       double ans(0);
-      const ArmaT<double>& sample = LikelihoodFunction<double,ArmaT>::forecast_.exposeValue();
+      const ArmaT<double>& sample = LikelihoodFunction<double,ArmaT>::forecast_();
       for(uint i = 0; i < LikelihoodFunction<double,ArmaT>::actual_values_.n_elem; i++) {
         ans += normal_logp(sample[i], LikelihoodFunction<double,ArmaT>::actual_values_[i], tau_);
       }
       return ans;
+    }
+    void print() const {
+      cout << "actual" << endl;
+      cout << LikelihoodFunction<double,ArmaT>::actual_values_ << endl;
+      cout << "forecast" << endl;
+      cout << LikelihoodFunction<double,ArmaT>::forecast_() << endl;
     }
   };
 }

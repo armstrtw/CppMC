@@ -29,13 +29,11 @@ namespace CppMC {
     MCMCDeterministic(const ArmaT<DataT>& initial_value): MCMCSpecialized<DataT,ArmaT>(initial_value) {}
 
     // deterministics only derive their logp from their parents
-    double calc_logp_self() const { return 0; }
+    double logp() const { return 0; }
 
-    // assumes parents have already been updated
-    void jump_self() { MCMCSpecialized<DataT,ArmaT>::value_ = eval(); }
-
-    // no need to tune deterministic
-    void tune_self(const double acceptance_rate) {}
+    // do nothing, object must be updated after all other objects are jumped
+    void jump() {}
+    void update() { MCMCSpecialized<DataT,ArmaT>::value_ = eval(); }
 
     // user must provide this function to update object
     virtual ArmaT<DataT> eval() const = 0;

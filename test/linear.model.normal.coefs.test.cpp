@@ -17,14 +17,13 @@ private:
   mat& X_;
   MCMCStochastic<double,Col>& b_;
 public:
-  EstimatedY(Mat<double>& X, MCMCStochastic<double,Col>& b): MCMCDeterministic<double,Mat>(X * b.exposeValue()), X_(X), b_(b) {
-    registerParents();
-  }
-  void registerParents() {
-    parents_.push_back(&b_);
+  EstimatedY(Mat<double>& X, MCMCStochastic<double,Col>& b): MCMCDeterministic<double,Mat>(X * b()), X_(X), b_(b)
+  {}
+  void getParents(std::vector<MCMCObject*>& parents) const {
+    parents.push_back(&b_);
   }
   Mat<double> eval() const {
-    return X_ * b_.exposeValue();
+    return X_ * b_();
   }
 };
 
@@ -33,7 +32,8 @@ CppMCGeneratorT MCMCObject::generator_;
 
 int main() {
   const int N = 1000;
-  mat X = rand<mat>(N,2);
+  const int NC = 2;
+  mat X = rand<mat>(N,NC);
   mat y = rand<mat>(N,1);
 
   // make X col 0 const
@@ -41,9 +41,9 @@ int main() {
 
   vec coefs;
   solve(coefs, X, y);
-  Normal<Col> B(0.0, 1.0, vec(2));
+  Normal<Col> B(0.0, 1.0, rand<vec>(NC));
   EstimatedY obs_fcst(X, B);
-  NormalLikelihood<Mat> likelihood(y, obs_fcst, 1);
+  NormalLikelihood<Mat> likelihood(y, obs_fcst, 1.0);
   int iterations = 1e5;
   likelihood.sample(iterations, 1e2, 4);
   const vector<vec>& coefs_hist(B.getHistory());

@@ -34,13 +34,14 @@ namespace CppMC {
     HyperPrior(const DataT value) : MCMCSpecialized<DataT,ArmaT>(ArmaT<DataT>(1)) {
       MCMCSpecialized<DataT,ArmaT>::value_[0] = value;
     };
-    double calc_logp_self() const { return static_cast<double>(0); }    
-    void registerParents() {}
-    void jump_self() {}
-    void preserve_self() {}
-    void revert_self() {}
-    void tally_self() {}
-    void tune_self(const double acceptance_rate) {}
+    void getParents(std::vector<MCMCObject*>& parents) const {}
+    void jump() {}
+    void update() {}
+    void preserve() {}
+    void revert() {}
+    void tally() {}
+    double logp() const { return static_cast<double>(0); }
+    void print() const { cout << MCMCSpecialized<DataT,ArmaT>::value_ << endl; }
   };
 } // namespace CppMC
 #endif // MCMC_HYPERPRIOR_HPP

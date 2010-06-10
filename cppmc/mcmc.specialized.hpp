@@ -35,25 +35,13 @@ namespace CppMC {
     std::vector< ArmaT<DataT> > history_;
   public:
     MCMCSpecialized(const ArmaT<DataT>& shape): MCMCObject(), value_(shape) {}
-    const ArmaT<DataT>& exposeValue() const {
-      return value_;
-    }
-    void preserve_self() {
-      old_value_ = value_;
-    }
-    void revert_self() {
-      value_ = old_value_;
-    }
-    void tally_self() {
-      history_.push_back(value_);
-    }
-    void print_self() {
-      std::cout << value_ << std::endl;
-    }
-    const std::vector< ArmaT<DataT> >& getHistory() const {
-      return history_;
-    }
-
+    //const ArmaT<DataT>& exposeValue() const { return value_; }
+    const ArmaT<DataT>& operator()() const { return value_; }
+    void preserve() { old_value_ = value_; }
+    void revert() { value_ = old_value_; }
+    void tally() { history_.push_back(value_); }
+    void print() const { std::cout << value_ << std::endl; }
+    const std::vector< ArmaT<DataT> >& getHistory() const { return history_; }
     uint nrow() const { return value_.n_rows; }
     uint ncol() const { return value_.n_cols; }
     uint size() const { return nrow() * ncol(); }

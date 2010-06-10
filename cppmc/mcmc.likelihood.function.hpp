@@ -36,43 +36,59 @@ namespace CppMC {
     const ArmaT<DataT>& actual_values_;
     MCMCSpecialized<DataT,ArmaT>& forecast_;
   public:
-    LikelihoodFunction(const ArmaT<DataT>& actual_values, MCMCSpecialized<DataT,ArmaT>& forecast): MCMCObject(), generator_(20u), uni_dist_(0,1), uni_rng_(generator_, uni_dist_), actual_values_(actual_values), forecast_(forecast) {
-      registerParents();
-    }
+    LikelihoodFunction(const ArmaT<DataT>& actual_values, MCMCSpecialized<DataT,ArmaT>& forecast): MCMCObject(), generator_(20u), uni_dist_(0,1), uni_rng_(generator_, uni_dist_), actual_values_(actual_values), forecast_(forecast) {}
 
     void sample(int iterations, int burn, int thin) {
+      double logp_value,old_logp_value;
       double accepted(0);
       double rejected(0);
 
+      std::vector<MCMCObject*> mcmcObjects;      
+      buildMCMCObjectList(mcmcObjects);
+      std::vector<MCMCObject*> uniqueObjects(uniqueMCMCObjectList(mcmcObjects));
+      cout << "uniqueObjects size: " << uniqueObjects.size() << endl;
+      for(size_t i = 0; i < uniqueObjects.size(); i++) {
+        uniqueObjects[i]->print();
+      }
+
+      logp_value  = -std::numeric_limits<double>::infinity();
+      old_logp_value = -std::numeric_limits<double>::infinity();
       for(int i = 0; i < iterations; i++) {
-	double logp_old = logp();
-	jump(i);
-	double logp_new = logp();
-	if(logp_new == neg_inf || log(uni_rng_()) > logp_new - logp_old) {
-	  revert();
-	  rejected+=1;
+        old_logp_value = logp_value;
+        preserve_all(uniqueObjects);
+        jump_all(uniqueObjects);
+        update_all(uniqueObjects);
+	logp_value = logp_all(uniqueObjects);
+        //cout << "logp: " << logp_value << endl;
+	if(logp_value == -std::numeric_limits<double>::infinity() || log(uni_rng_()) > logp_value - old_logp_value) {
+	  revert_all(uniqueObjects);
+          logp_value = old_logp_value;
+	  rejected += 1;
 	} else {
-	  accepted+=1;
+	  accepted += 1;
 	}
 	if(i > burn && i % thin == 0) {
-	  tally();
+          //cout << "ar: " << accepted / (accepted + rejected) << endl;
+          accepted = 0;
+          rejected = 0;
+	  tally_all(uniqueObjects);
 	}
       }
     }
 
-    void registerParents() {
-      MCMCObject::parents_.push_back(&forecast_);
+    void getParents(std::vector<MCMCObject*>& parents) const {
+      parents.push_back(&forecast_);
     }
-    
+
     // don't need any of these
-    void jump_self() {}
-    void preserve_self() {}
-    void revert_self() {}
-    void tally_self() {}
-    void tune_self(const double acceptance_rate) {}
-    void print_self() {
+    void jump() {}
+    void update() {}
+    void preserve() {}
+    void revert() {}
+    void tally() {}
+    void print() {
       std::cout << "acutal values:" << std::endl << actual_values_;
-      std::cout << "forecast:" << std::endl << forecast_.exposeValue();
+      std::cout << "forecast:" << std::endl << forecast_();
     }
   };
 } // namespace CppMC
