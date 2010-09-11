@@ -18,6 +18,7 @@
 #ifndef MCMC_UNIFORM_HPP
 #define MCMC_UNIFORM_HPP
 
+#include <iostream>
 #include <cppmc/mcmc.stochastic.hpp>
 #include <cppmc/mcmc.hyperprior.hpp>
 
@@ -60,15 +61,16 @@ namespace CppMC {
       parents.push_back(&upper_bound_);
     }
 
-    // specialized jump for uniform
-    void jump() { 
-      MCMCStochastic<double,ArmaT>::jumper_.jump();
-
+    //specialized jump for uniform
+    void jump() {
+      MCMCStochastic<double,ArmaT>::jump();
       // neg inf jump, redo immediately
       while(logp() == -std::numeric_limits<double>::infinity()) {
+        //MCMCStochastic<double,ArmaT>::scale_ *= .95;
         MCMCStochastic<double,ArmaT>::revert();
-        MCMCStochastic<double,ArmaT>::jumper_.jump();
+        MCMCStochastic<double,ArmaT>::jump();
       }
+      //cout << "scale: " << MCMCStochastic<double,ArmaT>::scale_ << cout << "final: " << MCMCStochastic<double,ArmaT>::value_;
     }
   };
 } // namespace CppMC

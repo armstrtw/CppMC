@@ -34,6 +34,8 @@ namespace CppMC {
     // do nothing, object must be updated after all other objects are jumped
     void jump() {}
     void update() { MCMCSpecialized<DataT,ArmaT>::value_ = eval(); }
+    bool isDeterministc() const { return true; }
+    bool isStochastic() const { return false; }
 
     // user must provide this function to update object
     virtual ArmaT<DataT> eval() const = 0;

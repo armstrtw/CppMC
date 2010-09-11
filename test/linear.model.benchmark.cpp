@@ -38,7 +38,8 @@ int main() {
 
   Uniform<Col> B(-100.0,100.0, rand<vec>(NC));
   EstimatedY obs_fcst(X, B);
-  NormalLikelihood<Mat> likelihood(y, obs_fcst, 1.0);
+  Uniform<Mat> tauY(0, 100, vec(1)); tauY[0] = 1.0;
+  NormalLikelihood<Mat> likelihood(y, obs_fcst, tauY);
   int iterations = 1e5;
   likelihood.sample(iterations, 1e2, 4);
   return 1;

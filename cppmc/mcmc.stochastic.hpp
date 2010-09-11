@@ -19,7 +19,6 @@
 #define MCMC_STOCHASTIC_HPP
 
 #include <cppmc/mcmc.specialized.hpp>
-#include <cppmc/mcmc.jumper.hpp>
 
 namespace CppMC {
 
@@ -27,13 +26,17 @@ namespace CppMC {
            template<typename> class ArmaT>
   class MCMCStochastic : public MCMCSpecialized<DataT,ArmaT> {
   protected:
-    MCMCJumper<DataT,ArmaT> jumper_;
+    double scale_;
   public:
-    MCMCStochastic(const ArmaT<DataT>& shape):
-      MCMCSpecialized<DataT,ArmaT>(shape),
-      jumper_(MCMCSpecialized<DataT,ArmaT>::value_,MCMCSpecialized<DataT,ArmaT>::generator_) {}
-    void jump() { jumper_.jump(); }
+    MCMCStochastic(const ArmaT<DataT>& shape): MCMCSpecialized<DataT,ArmaT>(shape), scale_(1.0) {}
+    void jump() {
+      for(size_t i = 0; i < MCMCSpecialized<DataT,ArmaT>::value_.n_elem; i++) {
+	MCMCSpecialized<DataT,ArmaT>::value_[i] += scale_ * MCMCSpecialized<DataT,ArmaT>::rng_();
+      }
+    }
     void update() {}
+    bool isDeterministc() const { return false; }
+    bool isStochastic() const { return true; }
   };
 } // namespace CppMC
 #endif // MCMC_STOCHASTIC_HPP

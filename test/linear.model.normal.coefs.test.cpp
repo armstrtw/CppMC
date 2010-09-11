@@ -43,7 +43,8 @@ int main() {
   solve(coefs, X, y);
   Normal<Col> B(0.0, 1.0, rand<vec>(NC));
   EstimatedY obs_fcst(X, B);
-  NormalLikelihood<Mat> likelihood(y, obs_fcst, 1.0);
+  Uniform<Mat> tauY(0, 100, vec(1)); tauY[0] = 1.0;
+  NormalLikelihood<Mat> likelihood(y, obs_fcst, tauY);
   int iterations = 1e5;
   likelihood.sample(iterations, 1e2, 4);
   const vector<vec>& coefs_hist(B.getHistory());
@@ -54,9 +55,7 @@ int main() {
   outfile.open ("coefs.csv");
   for(uint i = 0; i < coefs_hist.size(); i++) {
     outfile << coefs_hist[i][0] << "," << coefs_hist[i][1] << endl;
-    avg_coefs += coefs_hist[i];
   }
-  avg_coefs /= coefs_hist.size();
 
   cout << "iterations: " << iterations << endl;
   cout << "collected " << coefs_hist.size() << " samples." << endl;

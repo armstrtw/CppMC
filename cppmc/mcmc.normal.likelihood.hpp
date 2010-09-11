@@ -18,32 +18,48 @@
 #ifndef MCMC_NORMAL_LIKELIHOOD_HPP
 #define MCMC_NORMAL_LIKELIHOOD_HPP
 
-#include <cppmc/mcmc.likelihood.function.hpp>
+#include <cppmc/mcmc.object.hpp>
 #include <cppmc/mcmc.logp.functions.hpp>
 
 namespace CppMC {
 
   template<template<typename> class ArmaT>
-  class NormalLikelihood : public LikelihoodFunction<double,ArmaT> {
+  class NormalLikelihood : public MCMCObject {
   private:
-    const double tau_;
+    const ArmaT<double>& observations_;
+    MCMCSpecialized<double,ArmaT>& forecast_;
+    MCMCSpecialized<double,ArmaT>& tau_;
   public:
-    NormalLikelihood(const ArmaT<double>& actual_values, MCMCSpecialized<double,ArmaT>& forecast, const double tau): LikelihoodFunction<double,ArmaT>(actual_values, forecast), tau_(tau) {}
-
+    NormalLikelihood(const ArmaT<double>& observations, MCMCSpecialized<double,ArmaT>& forecast, MCMCSpecialized<double,ArmaT>& tau): observations_(observations), forecast_(forecast), tau_(tau) {}
     double logp() const {
       double ans(0);
-      const ArmaT<double>& sample = LikelihoodFunction<double,ArmaT>::forecast_();
-      for(uint i = 0; i < LikelihoodFunction<double,ArmaT>::actual_values_.n_elem; i++) {
-        ans += normal_logp(sample[i], LikelihoodFunction<double,ArmaT>::actual_values_[i], tau_);
+      const ArmaT<double>& sample = forecast_();
+      const uint sample_size = sample.n_elem;
+      const uint tau_size = tau_.size();
+      for(uint i = 0; i < observations_.n_elem; i++) {
+        ans += normal_logp(sample[i % sample_size], observations_[i], tau_[i % tau_size]);
       }
       return ans;
     }
+    void getParents(std::vector<MCMCObject*>& parents) const {
+      parents.push_back(&forecast_);
+      parents.push_back(&tau_);
+    }
+    void jump() {}
+    void update() {}
+    void preserve() {}
+    void revert() {}
+    void tally() {}
     void print() const {
       cout << "actual" << endl;
-      cout << LikelihoodFunction<double,ArmaT>::actual_values_ << endl;
+      cout << observations_ << endl;
       cout << "forecast" << endl;
-      cout << LikelihoodFunction<double,ArmaT>::forecast_() << endl;
+      cout << forecast_() << endl;
+      cout << "tau" << endl;
+      cout << tau_() << endl;
     }
+    bool isDeterministc() const { return false; }
+    bool isStochastic() const { return false; }
   };
 }
 #endif // MCMC_NORMAL_LIKELIHOOD_HPP

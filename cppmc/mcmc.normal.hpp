@@ -48,9 +48,9 @@ namespace CppMC {
 
     double logp() const {
       double ans(0);
+      const uint mu_size = mu_.size();
+      const uint tau_size = tau_.size();
       for(size_t i = 0; i < MCMCStochastic<double,ArmaT>::size(); i++) {
-        const uint mu_size = mu_.size();
-        const uint tau_size = tau_.size();
 	ans += normal_logp(MCMCStochastic<double,ArmaT>::value_[i], mu_[i % mu_size], tau_[i % tau_size]);
       }
       return ans;

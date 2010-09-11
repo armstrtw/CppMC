@@ -1,7 +1,9 @@
 
 CC = g++
-CPPFLAGS = -I.. -Wall -g
-ARMADILLO_LIBS = -llapack-3
+##CPPFLAGS = -I.. -Wall -g
+CPPFLAGS = -I.. -Wall -O2
+ARMADILLO_LIBS = -llapack
+##ARMADILLO_LIBS = -lgoto2 -lpthread -lgfortran
 LIBS = $(ARMADILLO_LIBS)
 
 all: linear.model.test linear.model.benchmark linear.model.normal.coefs.test varying.coefs.test

@@ -77,7 +77,8 @@ int main() {
   Normal<Mat> B(0.0, 0.0001, rand<mat>(J,NC));
   
   EstimatedY obs_fcst(X, B, groups);
-  NormalLikelihood<Mat> likelihood(y, obs_fcst, 1.0);
+  Uniform<Mat> tauY(0, 100, vec(1)); tauY[0] = 1.0;
+  NormalLikelihood<Mat> likelihood(y, obs_fcst, tauY);
   likelihood.print();
   likelihood.sample(1e5, 1e4, 10);
 

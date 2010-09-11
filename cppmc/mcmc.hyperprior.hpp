@@ -42,6 +42,8 @@ namespace CppMC {
     void tally() {}
     double logp() const { return static_cast<double>(0); }
     void print() const { cout << MCMCSpecialized<DataT,ArmaT>::value_ << endl; }
+    bool isDeterministc() const { return false; }
+    bool isStochastic() const { return false; }
   };
 } // namespace CppMC
 #endif // MCMC_HYPERPRIOR_HPP
