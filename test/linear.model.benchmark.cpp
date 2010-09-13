@@ -33,10 +33,10 @@ CppMCGeneratorT MCMCObject::generator_;
 int main() {
   const int NR = 1000;
   const int NC = 2;
-  mat X = rand<mat>(NR,NC);
-  mat y = rand<mat>(NR,1);
+  mat X = randn<mat>(NR,NC);
+  mat y = randn<mat>(NR,1);
 
-  Uniform<Col> B(-100.0,100.0, rand<vec>(NC));
+  Uniform<Col> B(-100.0,100.0, randn<vec>(NC));
   EstimatedY obs_fcst(X, B);
   Uniform<Mat> tauY(0, 100, vec(1)); tauY[0] = 1.0;
   NormalLikelihood<Mat> likelihood(y, obs_fcst, tauY);

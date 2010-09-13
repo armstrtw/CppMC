@@ -23,5 +23,6 @@
 #include <cppmc/mcmc.normal.hpp>
 #include <cppmc/mcmc.normal.likelihood.hpp>
 #include <cppmc/mcmc.uniform.hpp>
+#include <cppmc/mcmc.bernoulli.hpp>
 
 #endif // CPPMC_HPP

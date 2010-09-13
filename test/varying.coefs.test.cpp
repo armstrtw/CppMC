@@ -47,8 +47,8 @@ int main() {
   const uint NC = 4;
   const uint J = 3;
 
-  mat X = rand<mat>(NR,NC);
-  mat y = rand<mat>(NR,1);
+  mat X = randn<mat>(NR,NC);
+  mat y = randn<mat>(NR,1);
 
   // make X col 0 const
   for(uint i = 0; i < NR; i++) { X(i,0) = 1; }
@@ -74,7 +74,7 @@ int main() {
   vec coefs;
   solve(coefs, X, y);
 
-  Normal<Mat> B(0.0, 0.0001, rand<mat>(J,NC));
+  Normal<Mat> B(0.0, 0.0001, randn<mat>(J,NC));
   
   EstimatedY obs_fcst(X, B, groups);
   Uniform<Mat> tauY(0, 100, vec(1)); tauY[0] = 1.0;

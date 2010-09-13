@@ -34,8 +34,8 @@ CppMCGeneratorT MCMCObject::generator_;
 
 int main() {
   const int N = 100;
-  mat X = rand<mat>(N,2);
-  mat y = rand<mat>(N,1);
+  mat X = randn<mat>(N,2);
+  mat y = randn<mat>(N,1);
   cout << "y sd:" << stddev(y,0) << endl;
 
   // make X col 0 const
@@ -44,7 +44,7 @@ int main() {
   vec coefs;
   solve(coefs, X, y);
   //Uniform<Col> B(-100.0, 100.0, rand<vec>(2));
-  Normal<Col> B(0.0, 0.0001, rand<vec>(2));
+  Normal<Col> B(0.0, 0.0001, randn<vec>(2));
   EstimatedY obs_fcst(X, B);
   Uniform<Mat> tauY(0, 100, vec(1)); tauY[0] = 1.0;
   NormalLikelihood<Mat> likelihood(y, obs_fcst, tauY);

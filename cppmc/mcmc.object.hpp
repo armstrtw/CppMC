@@ -32,12 +32,14 @@ namespace CppMC {
   class MCMCObject {
   protected:
     static CppMCGeneratorT generator_;
-    boost::normal_distribution<double> rng_dist_;
+    boost::normal_distribution<double> normal_rng_dist_;
+    boost::uniform_real<double> uniform_rng_dist_;
     boost::variate_generator<CppMCGeneratorT&, boost::normal_distribution<double> > rng_;
+    boost::variate_generator<CppMCGeneratorT&, uniform_real<double> > uni_rng_;
     std::vector<MCMCObject*> locals_;
   public:
     ~MCMCObject() { for(size_t i =0; i < locals_.size(); i++) { delete locals_[i]; } }
-    MCMCObject(): rng_dist_(0, 1.0), rng_(generator_, rng_dist_) {}
+    MCMCObject(): normal_rng_dist_(0, 1.0), uniform_rng_dist_(0.0, 1.0), rng_(generator_, normal_rng_dist_), uni_rng_(generator_, uniform_rng_dist_) {}
     static void seedRNG(unsigned int s) { generator_.seed(s); }
     static void burnRNG(unsigned int n) { for(unsigned int i = 0; i < n; i++) { generator_(); } }
     static double tau_to_sd(const double tau) { return 1/sqrt(tau); }
