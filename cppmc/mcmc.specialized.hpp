@@ -72,10 +72,12 @@ namespace CppMC {
       //FIXME: this may not work if value_ is not <double>
       // have to think of some thing better, possibly partial specialization
       // for Col<> and Mat<>
-      ArmaT<double> ans(value_);
+      //ArmaT<double> ans = conv_to<mat>::from(value_);
+      ArmaT<double> ans;
+      ans.copy_size(value_);
       ans.fill(0.0);
       for(size_t i = 0; i < history_.size(); i++) {
-        ans += history_[i];
+        ans += conv_to<mat>::from(history_[i]);
       }
       ans /= static_cast<double>(history_.size());
       return ans;
