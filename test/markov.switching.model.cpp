@@ -16,11 +16,11 @@ private:
   Normal<Col>& sd0_;
   Normal<Col>& sd1_;
 public:
-  TauY(Bernoulli<Col>& state,Normal<Col>& sd0,Normal<Col>& sd1):
-    MCMCDeterministic<double,Mat>(randn<mat>(state_.size(),1)), state_(state), sd0_(sd0), sd1_(sd1)
+  TauY(Bernoulli<Col>& state, Normal<Col>& sd0, Normal<Col>& sd1):
+    MCMCDeterministic<double,Mat>(mat(state.size(),1)), state_(state), sd0_(sd0), sd1_(sd1)
   {
-    for(uint i = 0; i < state.size(); i++) {
-      MCMCDeterministic<double,Mat>::value_[i] = state_[i] ? pow(sd1_[0],-2) : pow(sd0_[0],-2);
+    for(uint i = 0; i < state_.size(); i++) {
+      MCMCDeterministic<double,Mat>::value_[i] = state_[i] ? pow(sd1_[0],-2.0) : pow(sd0_[0],-2.0);
     }
   }
   void getParents(std::vector<MCMCObject*>& parents) const {
@@ -29,7 +29,7 @@ public:
     parents.push_back(&sd1_);
   }
   Mat<double> eval() const {
-    Mat<double> ans;
+    mat ans(state_.size(),1);
     for(uint i = 0; i < state_.size(); i++) {
       ans[i] = state_[i] ? pow(sd1_[0],-2) : pow(sd0_[0],-2);
     }
@@ -72,7 +72,7 @@ public:
 CppMCGeneratorT MCMCObject::generator_;
 
 int main() {
-  const int NR = 100;
+  const int NR = 20;
   const int NC = 2;
   const int Nstates = 2;
   double true_sd0 = 1.0;
@@ -92,28 +92,25 @@ int main() {
   cout << "y sd:" << stddev(y,0) << endl;
 
   // make X col 0 const
-  for(int i = 0; i < NR; i++) { X(i,0) = 1; }   
+  for(int i = 0; i < NR; i++) { X(i,0) = 1; }
 
-  Normal<Mat> B(0.0, 0.0001, randn<mat>(Nstates,NC));
-  Normal<Col> sd0(1.0,0.0001,randu<vec>(1));
-  Normal<Col> sd1(2.0,0.0001,randu<vec>(1));
-  Uniform<Col> high_vol_statep(0,0.10, randu<vec>(NR));
-  Bernoulli<Col> state(high_vol_statep,(randu<vec>(NR) > .5));
-  EstimatedY obs_fcst(X, B, state);
-  TauY tau_y(state,sd0,sd1);
+  Normal<Mat> B(0.0, 0.0001, randn<mat>(Nstates,NC)); B.print();
+  Normal<Col> sd0(1.0,0.0001,randu<vec>(1)); sd0.print();
+  Normal<Col> sd1(2.0,0.0001,randu<vec>(1)); sd1.print();
+  Uniform<Col> high_vol_statep(0,0.10, randu<vec>(1)); high_vol_statep.print();
+  Bernoulli<Col> state(high_vol_statep,(randu<vec>(NR) > .5)); state.print();
+  EstimatedY obs_fcst(X, B, state); obs_fcst.print();
+  TauY tau_y(state,sd0,sd1); tau_y.print();
   NormalLikelihood<Mat> likelihood(y, obs_fcst, tau_y);
 
-  //cout << "B" << endl; B.print();
-  //cout << "obs_fcst" << endl << obs_fcst.eval() << endl;
-  //cout << "likelihood"; likelihood.print();
-
-  int iterations = 1e5;
-  likelihood.sample(iterations, 1e4, 100);
+  int iterations = 1e6;
+  likelihood.sample(iterations, 1e5, 100);
 
   cout << "iterations: " << iterations << endl;
   cout << "collected " << B.getHistory().size() << " samples." << endl;
   //cout << "lm coefs" << endl << coefs << endl;
   cout << "avg_coefs" << endl << B.mean() << endl;
-  cout << "tau: " << tau_y.mean() << endl;
+  cout << "state" << endl << state.mean() << endl;
+  // cout << "tau: " << tau_y.mean() << endl;
   return 1;
 }
